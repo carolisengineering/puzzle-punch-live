@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+node_modules/
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# written by the helper while you play; not source
+telemetry/
+highscore.json
+combat-studio.json
