@@ -27,6 +27,8 @@ To look at one change on its own instead, diff the two game files:
 | `puzzle_punch_helper.ps1` | The local helper (PowerShell). Serves the game at http://localhost:8747/ and keeps records and run logs beside it. |
 | `Launch Puzzle Punch.bat` | Windows launcher: starts the helper, opens the game. |
 | `docs/` | Notes for this cut only. |
+| `firebase.json` | Firebase Hosting config for the public build. |
+| `scripts/deploy.sh` | Builds `public/` from the game file and deploys it. |
 
 Not copied: the Dev Studio and Input Lab pages, `samplers/`, `harness/`, `telemetry/`, `art/`, `archive/`.
 
@@ -38,6 +40,22 @@ Windows: double-click `Launch Puzzle Punch.bat`.
 Mac: the helper needs PowerShell (`brew install powershell`), then
 `pwsh -File puzzle_punch_helper.ps1` and open http://localhost:8747/. Opening the HTML file
 directly also works; you just lose records and run logs.
+
+## Deploy
+Firebase Hosting serves the game as a static page. There is no helper up there, so records and
+run logs are off: the game sees the `/highscore` 404, sets `telemOffline` and says so on the HUD.
+It plays in full otherwise.
+
+    scripts/deploy.sh --serve    # preview on localhost first
+    scripts/deploy.sh            # ship it
+
+The script copies the game file to `public/index.html` and deploys that, rebuilding `public/`
+from scratch each time so a deploy cannot ship a stale copy. `public/` is generated; it is
+gitignored and is not source. `firebase.json` deliberately has no catch-all rewrite — the
+helper routes must 404 for the game's offline path to work, and a rewrite would answer them
+with the page itself at `200`.
+
+First time on a new machine: `npx -y firebase-tools login`.
 
 ## Level
 THE LIVING DEPTHS, alone. There is no antechamber: START on the setup screen descends straight
