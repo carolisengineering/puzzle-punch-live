@@ -6,12 +6,13 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const FILE = 'PUZZLE PUNCH.html';
-const FROM_MD5 = 'c8beff8206ae9b044c7be17598178fc0';   // v0.85o, as copied from Puzzle-Punch @ 70e129f
+const FROM_MD5 = '076d5af2467aa1f483213866f57e2b90';   // v0.85q, as copied from Puzzle-Punch @ c155c19
 /* Earlier sources this same trim ran against, unchanged: v0.85m md5 77e86a3e01f4a1ea4c738cc63da54707
-   (Puzzle-Punch @ 93fc3cd), the first LIVE 1 cut. Point FROM_MD5 at the version in hand. */
+   (Puzzle-Punch @ 93fc3cd), the first LIVE 1 cut; v0.85o md5 c8beff8206ae9b044c7be17598178fc0
+   (Puzzle-Punch @ 70e129f). Point FROM_MD5 at the version in hand. */
 let s = readFileSync(FILE, 'utf8');
 const md5 = t => createHash('md5').update(t, 'utf8').digest('hex');
-if(md5(s) !== FROM_MD5) throw new Error(`md5 is ${md5(s)}, expected ${FROM_MD5} (v0.85m). Not patching.`);
+if(md5(s) !== FROM_MD5) throw new Error(`md5 is ${md5(s)}, expected ${FROM_MD5} (v0.85q). Not patching.`);
 
 const once = (from, to, label) => {
   const i = s.indexOf(from);
