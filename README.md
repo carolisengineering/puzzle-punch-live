@@ -70,7 +70,8 @@ The deployed page also loads `live/cloud-telemetry.js`, which `scripts/deploy.sh
   the module sends `run_start` and `run_end` through it. Every event is tagged `game_version`, read
   from the game file at deploy time. Local previews send nothing to GA;
 - saves each human run's log, gzipped, to Firestore `runs/{uid}_{stamp}` (anonymous sign-in).
-  Logs over 900 KB gzipped are saved slim (header and summary only).
+  Logs over 900 KB gzipped are saved slim (header and summary only). `log` is exempt from indexing
+  (`firestore.indexes.json`), which saves about 3 KB per run; the export needs only `updatedAt`'s index.
 
 Players can write only their own runs and can never read; see `firestore.rules`.
 

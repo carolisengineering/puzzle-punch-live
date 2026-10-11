@@ -1,0 +1,6 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    { "collectionGroup": "runs", "fieldPath": "log", "indexes": [] }
+  ]
+}

@@ -9,7 +9,7 @@
 # Each deploy is labelled with the game version and the commit ("-dirty" if the tree has uncommitted
 # changes), so Firebase console -> Hosting -> Release history shows what went out when.
 #
-# Usage: scripts/deploy.sh            # deploy hosting + Firestore rules
+# Usage: scripts/deploy.sh            # deploy hosting + Firestore rules and indexes
 #        scripts/deploy.sh --serve    # preview on localhost:5002 against local emulators
 set -euo pipefail
 
@@ -29,4 +29,4 @@ if [ "${1-}" = "--serve" ]; then
 fi
 
 echo "deploying: $LABEL"
-exec npx -y firebase-tools deploy --only hosting,firestore:rules --message "$LABEL"
+exec npx -y firebase-tools deploy --only hosting,firestore:rules,firestore:indexes --message "$LABEL"
