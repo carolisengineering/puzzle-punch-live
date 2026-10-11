@@ -1,6 +1,8 @@
 # Cloud telemetry: go-live steps
 
-Branch: `live-telemetry`. The code and tests are done (unit 33/33, emulator 35/35) but **not deployed**.
+Merged into `main` (PR #1). Steps 1–6 are the one-time go-live. For day-to-day use, see
+**Reading runs in the console** and **Routine: exporting runs** below. Every machine that exports
+still needs step 2.
 Design: `docs/superpowers/specs/2026-10-10-live-play-telemetry-design.md`.
 Plan: `docs/superpowers/plans/2026-10-10-live-play-telemetry.md`.
 
@@ -77,6 +79,25 @@ each deploy. GA only reports on a dimension from the day it is registered, so ad
 Once the live check passes, merge `live-telemetry` into `main`.
 
 ---
+
+## Reading runs in the console
+
+Firebase console → Firestore → `runs`. Each document is one run, with the ID `{uid}_{stamp}`.
+
+- **Readable fields:** `kind` (`start`, `partial`, `full` or `slim`), `result`, `level`,
+  `durationSec`, `score`, `endReason`, `game`, `stamp`, `createdAt` and `updatedAt`.
+- **`log`:** the full run log, gzipped. The console shows only raw bytes. `rawBytes` is the size
+  when unzipped. A `start` document has no log. A `slim` log keeps only the header and summary.
+
+To read a log, export it (step 2's gcloud setup is needed once per machine):
+
+```bash
+node scripts/export-runs.mjs --min-age-minutes 0 --keep
+```
+
+`--min-age-minutes 0` includes runs from the last hour, and `--keep` leaves the cloud copy in
+place. Each run is written to `telemetry-live/` as `delve-run <stamp> live-<id>.json`, plus a row in
+`telemetry-live/runs-summary.csv`.
 
 ## Routine: exporting runs
 

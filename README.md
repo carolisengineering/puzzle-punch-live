@@ -83,7 +83,14 @@ Export runs to `telemetry-live/` (gitignored) and delete them from the cloud:
     node scripts/export-runs.mjs --out ../Puzzle-Punch/telemetry
 
 Each run becomes `delve-run <stamp> live-<uid6>.json`, the same shape the helper writes, and a row in
-`telemetry-live/runs-summary.csv`. First time: `gcloud auth application-default login`.
+`telemetry-live/runs-summary.csv`. First time on a machine, install gcloud and log in:
+
+    brew install google-cloud-sdk
+    gcloud auth application-default login
+    gcloud auth application-default set-quota-project puzzle-punch
+
+In the Firestore console, a run's `log` field is gzipped and shows as raw bytes. Export the run to
+read it. See `docs/TELEMETRY — go-live steps.md` → Reading runs in the console.
 
 The project stays on the free Spark plan: 1 GiB stored (~30,000 runs) and 20K writes/day (~7,000 runs/day).
 Spark never bills. Going over the daily writes stops recording until the next day; a full 1 GiB stops
