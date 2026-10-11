@@ -134,6 +134,4 @@ If junk data ever shows up, export with `--purge-invalid` and consider turning o
 - CSV formula injection: a client-written `stamp` or `endReason` starting with `=` becomes a
   formula when the CSV is opened in Excel or Sheets.
 - GA sends `0` for a missing `duration_sec` or `score`, which pulls averages down.
-- Firestore indexes the `log` bytes field by default. A single-field index exemption for
-  `runs.log` would save storage.
 - The spec describes run detection as a pure function; the code uses a stateful tracker.
