@@ -1,0 +1,35 @@
+rules_version = '2';
+// Public run logs from the Firebase build. Players may write only their own runs and never read;
+// only the export script (Admin SDK, which bypasses these rules) reads and deletes.
+// Every field is typed and size-capped, so junk cannot fill storage cheaply or wedge the export.
+// Spec: docs/superpowers/specs/2026-10-10-live-play-telemetry-design.md
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function short(v, n) { return v is string && v.size() <= n; }
+    function numOrNull(v) { return v == null || v is number; }
+
+    function validRun(id, d) {
+      return d.uid == request.auth.uid
+        && d.keys().hasOnly(['uid', 'stamp', 'game', 'level', 'result', 'endReason', 'durationSec',
+             'score', 'kind', 'log', 'rawBytes', 'createdAt', 'updatedAt'])
+        && short(d.stamp, 64)
+        // the id is the module's docId(uid, stamp), so one stamp cannot fan out into many documents
+        && id == request.auth.uid + '_' + d.stamp.replace('[^0-9A-Za-z-]', '-')
+        && short(d.game, 64) && short(d.level, 64) && short(d.result, 32)
+        && (d.get('endReason', null) == null || short(d.endReason, 200))
+        && numOrNull(d.get('durationSec', null)) && numOrNull(d.get('score', null))
+        && d.kind in ['start', 'partial', 'full', 'slim']
+        // a start has no log; every other kind has one, with its unpacked size
+        && (d.kind == 'start') == !('log' in d)
+        && ('log' in d) == ('rawBytes' in d)
+        && (!('log' in d) || (d.log is bytes && d.log.size() < 950000
+                              && d.rawBytes is int && d.rawBytes >= 0))
+        && d.updatedAt == request.time;
+    }
+
+    match /runs/{id} {
+      allow read, delete: if false;
+      allow create, update: if request.auth != null && validRun(id, request.resource.data);
+    }
+  }
+}

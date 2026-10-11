@@ -15,3 +15,9 @@ public/
 
 # firebase CLI deploy cache; local state, not source
 .firebase/
+
+# written by scripts/export-runs.mjs; public players' run logs, not source
+telemetry-live/
+
+# Firebase emulator logs
+*-debug.log

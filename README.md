@@ -29,6 +29,9 @@ To look at one change on its own instead, diff the two game files:
 | `docs/` | Notes for this cut only. |
 | `firebase.json` | Firebase Hosting config for the public build. |
 | `scripts/deploy.sh` | Builds `public/` from the game file and deploys it. |
+| `live/` | The cloud telemetry module, added to the deployed page only. |
+| `firestore.rules` | Who may write run logs (players: their own; nobody reads). |
+| `scripts/export-runs.mjs` | Pulls run logs down to `telemetry-live/` and clears them from Firestore. |
 
 Not copied: the Dev Studio and Input Lab pages, `samplers/`, `harness/`, `telemetry/`, `art/`, `archive/`.
 
@@ -42,29 +45,63 @@ Mac: the helper needs PowerShell (`brew install powershell`), then
 directly also works; you just lose records and run logs.
 
 ## Deploy
-Firebase Hosting serves the game as a static page. There is no helper up there, so records and
+Firebase Hosting serves the game as a static page. There is no helper up there, so local records and
 run logs are off: the game sees the `/highscore` 404, sets `telemOffline` and says so on the HUD.
-It plays in full otherwise.
+It plays in full otherwise. Run logs go to the cloud instead; see Cloud telemetry below.
 
-    scripts/deploy.sh --serve    # preview on localhost first
+    scripts/deploy.sh --serve    # preview on localhost:5002 against local emulators (needs Java)
     scripts/deploy.sh            # ship it
 
 The script copies the game file to `public/index.html` and deploys that, rebuilding `public/`
-from scratch each time so a deploy cannot ship a stale copy. `public/` is generated; it is
+from scratch each time so a deploy cannot ship a stale copy. Each deploy is labelled with the game
+version and commit (e.g. `PUZZLE PUNCH v0.85r @ d124267-dirty`), shown in the Firebase console under
+Hosting → Release history. `public/` is generated; it is
 gitignored and is not source. `firebase.json` deliberately has no catch-all rewrite — the
 helper routes must 404 for the game's offline path to work, and a rewrite would answer them
 with the page itself at `200`.
 
 First time on a new machine: `npx -y firebase-tools login`.
 
+## Cloud telemetry
+The deployed page also loads `live/cloud-telemetry.js`, which `scripts/deploy.sh` copies into
+`public/` and adds to `public/index.html`. The game file is untouched. It:
+
+- adds the Google tag (gtag.js) at the top of `<head>`, which sends GA a `page_view` on every load;
+  the module sends `run_start` and `run_end` through it. Every event is tagged `game_version`, read
+  from the game file at deploy time. Local previews send nothing to GA;
+- saves each human run's log, gzipped, to Firestore `runs/{uid}_{stamp}` (anonymous sign-in).
+  Logs over 900 KB gzipped are saved slim (header and summary only).
+
+Players can write only their own runs and can never read; see `firestore.rules`.
+
+Export runs to `telemetry-live/` (gitignored) and delete them from the cloud:
+
+    node scripts/export-runs.mjs --dry-run   # count only
+    node scripts/export-runs.mjs             # export, then delete
+    node scripts/export-runs.mjs --keep      # export, keep the cloud copy
+    node scripts/export-runs.mjs --purge-invalid   # also clear runs that cannot be exported
+    node scripts/export-runs.mjs --out ../Puzzle-Punch/telemetry
+
+Each run becomes `delve-run <stamp> live-<uid6>.json`, the same shape the helper writes, and a row in
+`telemetry-live/runs-summary.csv`. First time: `gcloud auth application-default login`.
+
+The project stays on the free Spark plan: 1 GiB stored (~30,000 runs) and 20K writes/day (~7,000 runs/day).
+Spark never bills. Going over the daily writes stops recording until the next day; a full 1 GiB stops
+it until you export. The rules cap every field, but a determined script could still fill the storage
+with junk runs: export them like any others, and `--purge-invalid` clears anything that cannot be
+exported (saved under `telemetry-live/quarantine/` first). If that ever happens, turn on App Check.
+Export monthly, or when the console's Firestore usage nears 800 MB.
+
+Tests: `npm test` (unit) and `npm run test:emulator` (rules and export; needs `brew install openjdk`).
+
 ## Level
 THE LIVING DEPTHS, alone. There is no antechamber: START on the setup screen descends straight
 into the mine (the walk out of the mouth, as the dev menu's runs do it), and START on the end screen
-returns to the setup screen. The game file after the trim: md5 `17361ee8e516fb5157bcdcfc96c735f3`.
+returns to the setup screen. The game file after the trim: md5 `694f416583a1edfe7d7c442e369f14e2`.
 
 The other levels' code (castle, forest, desert, glacier, rainbow road, manor) is still in the file,
 unreachable. Pruning it is a later pass. The trim itself is `harness/live1_trim.mjs`; it runs
-against the version named in its `FROM_MD5` (now v0.85q) and stops if anything it expects is missing.
+against the version named in its `FROM_MD5` (now v0.85r) and stops if anything it expects is missing.
 
 ## Notes
 `docs/` holds this cut's build notes. The design docs, rulings and samplers stay in the big repo.
