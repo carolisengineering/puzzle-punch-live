@@ -1192,7 +1192,7 @@ function botLeaveBoard84g(S, o){
     S.leave84g = room; S.forceRetreat84g = true; BOTPACE84G.cool.set(room, G.t + Q.skipSec); BOTPACE84G.stats.leaves = (BOTPACE84G.stats.leaves || 0) + 1;
     tlog('bot_leave_board', { room: room.idx, kind: room.rock ? room.rock.kind : room.mini ? 'mini' : 'side', n, hp: Math.round(me.hp) });
   }
-  o.claim = true; S.goal = 'leave';
+  o.b = true; S.goal = 'leave';   /* v0.85r §1: B steps away now (RB held is the reroll) */
   return true;
 }
 /* her escort for STANDARD and SLOW */
@@ -1317,7 +1317,7 @@ function botSite84(){
   if(!side) return { site: 'main', tier: Math.min(3, G.stageIdx + 1) };
   if(side.rock) return side.rock.kind === 'mother' ? { site: 'motherlode', tier: Math.min(3, side.solved + 1) } : { site: 'rock', tier: side.tier || 1 };
   if(side.mini) return { site: 'mini', tier: side.tier || 1 };
-  return { site: 'side', tier: side.solved + 1 };
+  return { site: 'side', tier: side.tiers ? sideTier85r(side) : side.solved + 1 };   /* v0.85r §6: the board's dealt tier */
 }
 function botSolPath84(pan){
   const p = pan._path;
@@ -1404,7 +1404,9 @@ function fxClamp84(c){
   c.fx84 = true; FX84_CTXS.push(c); return c;
 }
 fxClamp84(ctx);
-function fx84Stats(){ FX84.stats = { beamPts: 0, ribbonSegs: 0, haloLicks: 0, dieRays: 0, pulseSkip: 0 }; }
+function fx84Stats(){ FX84.stats = { beamPts: 0, ribbonSegs: 0, haloLicks: 0, dieRays: 0, pulseSkip: 0,
+  /* v0.85r §5 (MINE): the raster load's three live counts — beams with a trail still drawn, PLINK!'s knives in flight, CINDER's ground fires */
+  beams: beams.length, knives: daggers.reduce((n, k) => n + (k.pl85 && !k.gone ? 1 : 0), 0), fires: fires.length }; }
 function fx84Set(to){
   const from = FX84.level; if(to === from) return;
   FX84.level = to;
@@ -1576,7 +1578,16 @@ const NSIL = {
        few chippings … the star placed more centrally'): seam i is board i+1 — board 1's at the top right, where the first chip
        (CHIPSETS.big[0]) bites; board 2's upper left, where the second bites; board 3's (the star) in the middle, which no chip
        reaches before the vein is spent. Was three seams set by the box (seamsOf), board 3's at the top. Positions MINE. */
-    seams: [{ x: 0.09, y: -1.10, rot: 1.0, l: 0.13, w: 0.042 }, { x: -0.20, y: -0.86, rot: -0.75, l: 0.15, w: 0.048 }, { x: -0.01, y: -0.52, rot: -0.35, l: 0.19, w: 0.06 }] },
+    seams: [{ x: 0.09, y: -1.10, rot: 1.0, l: 0.13, w: 0.042 }, { x: -0.20, y: -0.86, rot: -0.75, l: 0.15, w: 0.048 }, { x: -0.01, y: -0.52, rot: -0.35, l: 0.19, w: 0.06 }],
+    /* v0.85r §6 (YOURS: 'bite k removes mark k'): a side vein in a run (o.side85r) wears these instead — board 1's in the crown, which
+       CHIPSETS.side85r's first bite takes whole; board 2's on the left flank, the second bite's; board 3's low on the right, clear of both
+       (the third bite would take it, but the third board leaves the stump). `seams` above stays the Motherlode's and the practice ore's. MINE */
+    seams85r: [{ x: 0.00, y: -1.13, rot: -0.6, l: 0.12, w: 0.039 }, { x: -0.16, y: -0.75, rot: -0.3, l: 0.12, w: 0.039 }, { x: 0.18, y: -0.49, rot: -1.5, l: 0.13, w: 0.042 }] },
+  /* v0.85r §6 — THE STUMP (YOURS: 'a shorter spent stump'): what a side vein leaves when its third board is solved — rock B's own foot
+     (its outline to y −0.26 unchanged, so the footprint is the rock's), broken off in a jagged crown 0.36–0.45 units up (MINE: 0.45 ≈ 43 px
+     at the side vein's 95 px a unit), with the three shard piles at its feet (piles85r: neonSprite's per-chip piles, k = 0..2) and no seams. */
+  Bs: { name: 'SIDE VEIN · the stump', pts: [[-0.16, 0], [-0.22, -0.12], [-0.19, -0.26], [-0.30, -0.37], [-0.22, -0.43], [-0.12, -0.38], [-0.04, -0.45], [0.06, -0.39], [0.15, -0.44], [0.24, -0.36], [0.30, -0.40], [0.27, -0.27], [0.21, -0.12], [0.19, 0]],
+    seams: [], piles85r: 3 },
   /* MAIN VEIN candidates */
   M1: { name: 'M1 · THE GEODE', note: 'a broad rock split open on its face: a hollow lined with crystals', pts: [[-0.26, 0], [-0.34, -0.10], [-0.30, -0.22], [-0.50, -0.34], [-0.60, -0.52], [-0.54, -0.72], [-0.36, -0.88], [-0.10, -0.97], [0.18, -0.96], [0.42, -0.85], [0.58, -0.65], [0.60, -0.45], [0.48, -0.31], [0.32, -0.22], [0.30, -0.10], [0.24, 0]],
     geode: [[-0.28, -0.44], [-0.30, -0.62], [-0.14, -0.78], [0.10, -0.80], [0.30, -0.66], [0.32, -0.46], [0.14, -0.34], [-0.10, -0.34]], seams: [] },
@@ -1608,7 +1619,8 @@ const PAL83 = {
 const nh83 = i => { const v = Math.sin(i*127.1 + 311.7)*43758.5453; return v - Math.floor(v); };
 function nBox(p){ let x0 = 1e9, x1 = -1e9, y0 = 1e9; for(const q of p){ x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); } return { x0, x1, y0, cx: (x0 + x1)/2, cy: y0/2 }; }
 function inPoly(x, y, p){ let c = false; for(let i = 0, j = p.length - 1; i < p.length; j = i++){ const a = p[i], b = p[j]; if(((a[1] > y) !== (b[1] > y)) && (x < (b[0] - a[0])*(y - a[1])/(b[1] - a[1]) + a[0])) c = !c; } return c; }
-const CHIPSETS = { big: [[-0.95, 0.36], [3.55, 0.33], [-1.85, 0.50]], small: [[-0.95, 0.17], [3.55, 0.15], [-1.85, 0.18]], main5: [[-0.75, 0.27], [3.45, 0.27], [-1.75, 0.25], [0.45, 0.25], [2.8, 0.25]] };   /* v0.84m §6 */
+const CHIPSETS = { big: [[-0.95, 0.36], [3.55, 0.33], [-1.85, 0.50]], small: [[-0.95, 0.17], [3.55, 0.15], [-1.85, 0.18]], main5: [[-0.75, 0.27], [3.45, 0.27], [-1.75, 0.25], [0.45, 0.25], [2.8, 0.25]],   /* v0.84m §6 */
+  side85r: [[-1.85, 0.55], [3.4, 0.5], [0.2, 0.55]], stump85r: [] };   /* v0.85r §6: a side vein's three bites — the crown, the left flank, the right (each takes its board's mark; MINE); the stump takes none */
 function chipPolys(silKey, set){
   /* v0.84m §6: the main ore's five chunks — the crown right and left, the shoulders right and left, the band across the middle */
   if(set === 'main5') return [[[0.02,-1.2],[0.8,-1.2],[0.8,-0.74],[0.45,-0.78],[0.30,-0.73],[0.16,-0.77],[0.04,-0.74]], [[-0.8,-1.2],[0.02,-1.2],[0.04,-0.74],[-0.10,-0.78],[-0.26,-0.74],[-0.40,-0.79],[-0.8,-0.75]], [[0.03,-0.80],[0.8,-0.80],[0.8,-0.56],[0.42,-0.59],[0.25,-0.56],[0.12,-0.60],[0.03,-0.57]], [[-0.8,-0.80],[0.03,-0.80],[0.03,-0.57],[-0.12,-0.60],[-0.28,-0.56],[-0.42,-0.60],[-0.8,-0.57]], [[-0.8,-0.62],[0.8,-0.62],[0.8,-0.38],[0.36,-0.42],[0.18,-0.37],[0.0,-0.41],[-0.16,-0.37],[-0.32,-0.42],[-0.8,-0.39]]];
@@ -1657,7 +1669,7 @@ function neonSprite(o){
   /* v0.84m §6: a chunk's pieces lie under where it broke off */
   if(o.chips === 'main5' && !o.only){ const L = []; const CX = [0.36, -0.36, 0.40, -0.40, 0.0], SP = [0.16, 0.16, 0.14, 0.14, 0.26]; for(let k = 0; k < chips.length; k++) for(let j = 0; j < 4; j++){ const u = nh83(k*7 + j*3 + 1) - 0.5, v = nh83(k*5 + j + 2); L.push([CX[k] + u*2*SP[k], (k === 4 ? 0.10 : k < 2 ? 0.0 : 0.07) + v*0.10, 0.05 + 0.05*nh83(k*3 + j), 0.035 + 0.02*nh83(k + j*9)]); }
     L.sort((p, q) => p[1] - q[1]); c.save(); c.fillStyle = dark; c.strokeStyle = col; c.lineWidth = 1.6/S; for(const [x, y, hh, hw] of L){ c.beginPath(); c.moveTo(x - hw, y); c.lineTo(x - hw*0.2, y - hh); c.lineTo(x + hw, y); c.closePath(); c.fill(); c.stroke(); } c.restore(); }
-  if(o.shards !== false && !o.only && o.chips !== 'main5') for(let k = 0; k < chips.length; k++){ const sd = k % 2 ? -1 : 1, bx = sd*(0.36 + 0.14*k); c.save(); c.fillStyle = dark; c.strokeStyle = col; c.lineWidth = 1.6/S;   // a shard pile per chip, as today
+  if(o.shards !== false && !o.only && o.chips !== 'main5') for(let k = 0; k < (sil.piles85r || chips.length); k++){ const sd = k % 2 ? -1 : 1, bx = sd*(0.36 + 0.14*k); c.save(); c.fillStyle = dark; c.strokeStyle = col; c.lineWidth = 1.6/S;   // a shard pile per chip, as today
     for(let j = 0; j < 3; j++){ const x = bx + (j - 1)*0.07*sd, hh = 0.06 + 0.05*nh83(k*3 + j); c.beginPath(); c.moveTo(x - 0.05, 0); c.lineTo(x - 0.01 + 0.02*j, -hh); c.lineTo(x + 0.05, 0); c.closePath(); c.fill(); c.stroke(); } c.restore(); }
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d');
   if(o.only){ g.shadowColor = GEM84H.halo; g.shadowBlur = GEM84H.haloBlur; g.drawImage(bc, 0, 0); g.drawImage(bc, 0, 0); g.shadowBlur = 0; g.drawImage(bc, 0, 0); return NSPR[key] = { cv, ox, oy }; }   /* v0.84h §1: a dark ring, then the gem */
@@ -1759,12 +1771,12 @@ function drawMark84h(c, s, t, cols, S){
 function marksOf84h(o){ return o.tiers || [o.gem || 0]; }
 function drawMarks84h(c, o, P, spent){
   const tiers = marksOf84h(o), live = { fill: P.fill, line: P.seam || P.col, hot: P.hot };
-  seamsOf(o.sil).forEach((s, i) => { if(s.small){ drawMark84h(c, s.mark >= 5 ? { ...s, l: s.l*0.6 } : s, s.mark, live, o.S*1.6); return; } const t = tiers[i] | 0; if(t <= 0) return; drawMark84h(c, s, t, !spent && (!o.lit || o.lit[i]) ? live : MARK84H.dark, o.S); });
+  seamsOf85r(o).forEach((s, i) => { if(s.small){ drawMark84h(c, s.mark >= 5 ? { ...s, l: s.l*0.6 } : s, s.mark, live, o.S*1.6); return; } const t = tiers[i] | 0; if(t <= 0) return; drawMark84h(c, s, t, !spent && (!o.lit || o.lit[i]) ? live : MARK84H.dark, o.S); });
 }
 /* the twinkle's seams for a marked rock: each live mark's long axis (and the star's cross arm), so the shimmer runs along the mark */
 function twinkleSeams84h(o){
   const tiers = marksOf84h(o), out = [];
-  seamsOf(o.sil).forEach((s, i) => { if(s.small){ out.push(s); return; }   /* v0.84m §6: the small gems twinkle (sampler 12) */ const t = tiers[i] | 0; if(t <= 0 || (o.lit && !o.lit[i])) return; const k = s.l/GEM84F.d.l;
+  seamsOf85r(o).forEach((s, i) => { if(s.small){ out.push(s); return; }   /* v0.84m §6: the small gems twinkle (sampler 12) */ const t = tiers[i] | 0; if(t <= 0 || (o.lit && !o.lit[i])) return; const k = s.l/GEM84F.d.l;
     if(t >= 5) out.push({ ...s, l: MARK84H.cut.l*k, w: MARK84H.cut.w*k });
     else if(t >= 3) out.push({ ...s, l: MARK84H.star.l*k, w: MARK84H.star.w*k }, { ...s, rot: s.rot + Math.PI/2, l: MARK84H.star.l*k, w: MARK84H.star.w*k });
     else out.push(s); });
@@ -11625,7 +11637,7 @@ function buildFrom(spec){
    hold difficulty" with numbers before anyone tunes a weight. */
 const ORE_DOOR_MIN = 4;   // tiles: the never-in-a-mouth floor
 const ORE_WORK_R = 95;
-const VEIN_LEAVE_T = 0.6;   // v0.77: hold RB this long at ANY ore's board and she steps away (the side veins' number since v0.35, named now and shared)    // v0.67: the MAIN vein's claim/work/resume range — one number, no dead zone (the side veins' is 85)
+const VEIN_LEAVE_T = 0.6;   /* v0.85r §1: RETIRED — nothing leaves on an RB hold any more (B on an empty line leaves: VEIN_B_GUARD); kept defined for old readers */   // v0.77: hold RB this long at ANY ore's board and she steps away (the side veins' number since v0.35, named now and shared)    // v0.67: the MAIN vein's claim/work/resume range — one number, no dead zone (the side veins' is 85)
 const ORE_PLACE_W = {     // tune freely; sums need not match across levels
   depths:  { corner: 3, wall: 2, open: 1 },   // the mine keeps its deep corners, mostly
   castle:  { corner: 2, wall: 2, open: 2 },
@@ -11723,7 +11735,7 @@ function genDungeonBody85i(){   /* v0.85i: was genDungeon */
       continue; }
     MAZE.sys = GEN_USED;
     MAZE.fail = null;
-    if(buildFrom(spec)){ if(GEN_USED === 'ribbon') rrFinish(); if(GEN_USED === 'manor') mnFinish(); return true; }   // v0.69: generate as walls, play as void · v0.70: the doors and the boards
+    if(buildFrom(spec)){ if(GEN_USED === 'ribbon') rrFinish(); if(GEN_USED === 'manor') mnFinish(); dealSides85r(); /* v0.85r §6: the side veins' deal, once every gate has passed */ return true; }   // v0.69: generate as walls, play as void · v0.70: the doors and the boards
     MAZE.why[MAZE.fail] = (MAZE.why[MAZE.fail]||0)+1;
   }
   return false;
@@ -13622,7 +13634,7 @@ const FX_COL = { swing:'#eaf4ff', dagger:'#bcd8ff', lunge:'#eaf4ff', charge:'#ff
    still stamped v0.35, so every desert telemetry file on disk is labelled as
    a build that predates the level it describes. Mislabelled telemetry is
    worse than none — it is a wrong answer to "when did this change". */
-const GAME_VERSION = 'PUZZLE PUNCH v0.85q';   /* v0.85q — THE HUB AFTER A RUN (her chain state reset at every start), THE ROOST'S TIME (the same shapes, more time), the log's rock field (wall / vein / roam), FLINCH and STAGGERING BLOWS, and THE SISTER BLADES (Hades II's daggers, his third weapon) */   /* v0.85p — THE FOREST SAMPLER IN THE DEV MENU: a FOREST SAMPLER row opens the newest forest playable sampler through the helper, with its telemetry. A run plays as v0.85o's */   /* v0.85o — THE CHAMBER FLOODS ON EVERY WAY HOME: every room of the depths is a post, fired from inside the room */   /* v0.85n — THE BALANCE PASS: her chain and the keg resized, the stagger off the couple's attacks, SLOW DRIP as a drip, the escape's walls out of its count, the end screen's tally, the keg's blast redrawn, more telemetry */   /* v0.85m — HER ATTACKS: the three-tap chain and the pirouette, her dash matched to his, the flare's feel and the raised lantern; screen shake for big moments only */   /* v0.85l — BOARDS IN ADVANCE, POWDER KEG's REACH, THE BIG MAP */   /* v0.85k — HIS QC OF v0.85j, AND TEMPERED */   /* v0.85j — START THE RUN AGAIN: a row on the combat studio's page starts a new studio run with the dials as they are */   /* v0.85i — SIZES IN THE COMBAT STUDIO: seven trial dials on the studio's SHARED tab (enemies, the two players, the ore-back, hit boxes, the mine, the zoom, Hades' numbers); a studio run's side B only */   /* v0.85h — THE SLAM RINGS OVER THE WALL TOPS: while an ore-back or the Motherlode winds up, the part of its ring a wall top covers is drawn over it, flat red; the rocks' new legs, eye and shadow stay under a wall top (flat shapes), and so do the slam's cracks */   /* v0.85g — THE DEPTHS ATTACK POSES: drawn windups, strikes and tired poses for the Dripper (it stands up on its strings and throws itself at you), the rat (it rears and lunges, one clack), the slug (it arches, its mouth bursts open and gnashes, it springs), the great bat (wings back, a screech, a dart; on the Hades II bird's logic), the ore-back and the Motherlode (thick legs; crouch, hop, stomp); the bite carries the body forward; Hades' white fade on every windup; no biter rings, no green dashed ring, no bat ring or line; the rocks' cracks stay on the floor */   /* v0.85f — THE LINE PUZZLES: TAP AND GLIDE (a flick is one step, held 0.2 s it glides at 7.5 points a second, let go between points and it finishes to the nearer; the stick read by its angle, undo only straight back, a diagonal into a wall takes the open way, a blocked step bumps and knocks; after a solve the stick must be let go); the ORE VEIN IN TODAY'S COLOURS (the rock face, the cracks as a groove, the cyan line with a white core, the glint head, chips, the round start, the waking exit, gems with no dark disc, the grey-blue frame; failed clues ring red; triangles count live; a solve's pulse as a fading picture); PICK AND STONE (four tinks, a pebble scrape, a knock, a crystal ring, a thud, the crack and the shimmer; a slide is silent); her rumble on the board */   /* v0.85e — ZAG'S SWORD AT HADES' SIZES: the three strikes, the dash strike and the plunge at Hades x 0.38 (strike 1 a sweep, strike 2 a box, strike 3 a charged lunge with a box that rides with him); Zag's windups, stuns, chain windows and feet; the lock-on; the pierce grown with the thrust, the charged plunge x 1.6 of the new plunge; the damage today's */   /* v0.85d — DESCURA AT HADES II'S SIZES: the flying-wedge strikes that lock on, the long burst 410 each way from a full 0.8 s charge, its light where it fired, the spear and the orb at Hades' sizes, the orb's burst, the specials' curve; the damage toward Hades' proportions; the wells pour in the main event too */   /* v0.85c — THE HUB'S FEET: the combat layer ticks in the hub, the practice hall and the staged scenes (a move no longer locks his feet there for good) */   /* v0.85b — HIS QC OF v0.85a: DESCURA MEL'S WAY (forward strikes, planted charges, the long burst both ways and firing itself, the spear and the orb on release, the lock-on), her oil, the bots' sprint, the Drippers' timing, the dev seed, the longer dash, RUNNING START out */   /* v0.85a — THE LOOKS: GILDED TITAN's orbs and gold giant, CINDER CHARGE's running fire, PLINK!'s knives, the rare frame, the six icons, the armory's weapons */   /* v0.85 — WEAPONS AND COMBAT: THE STYGIAN BLADE and DESCURA in the real game (CO-OP ZAG's feel), the old weapons gone, the card pool for the new kits (hooks, shots, new and reworked cards, rarity), the orb fade, the per-card ledger, the computer's new sword */   /* v0.84v — THE WEAPONS BUILD: his and her arms reach their grips (every run); in the combat studio, the broadsword, THE PIERCE, THE PLUNGE and MEL'S STAFF. A normal run plays as v0.84u's */   /* v0.84u — THE COMBAT STUDIO: each player's own rumble (his events on his controller, hers on hers; her own strength dial). A normal run is v0.84t's */   /* v0.84t — THE COMBAT STUDIO: YOU PLAY · BOTH (two players on two controllers); TOP BUTTON · THROW / SMASH at the top of the page; the preset CO-OP ZAG. A normal run is v0.84s's */   /* v0.84s — THE COMBAT STUDIO: a preset is BOTH, HIM ONLY or HER ONLY; HADES-LIKE, HEAVY and CO-OP BRAWLER carry her dials; ZAG'S BLADE (him only); SEQUENCE · CLEAVES / ZAG'S (strike, chop, thrust) and MIDDLE CUT DAMAGE. A normal run is v0.84r's */   /* v0.84r — THE COMBAT STUDIO, THIRD PASS: the camera has no farthest zoom and no leash (every run); in a studio run her leash holds for everything but a board she has started; the page has tabs and the spear, the fangs, the boomerang and her kit have dials; THE SMASH is the sword's top button as a trial; the person plays him or her. Outside the camera, a normal run is v0.84q's */   /* v0.84q — THE COMBAT STUDIO, SECOND PASS: her bot leaves the menus to him and tops her oil up; the hit, effect and dash dials are live on every weapon; THE THROW, THE SHOUT and the release's recovery have dials; the kill beat has four triggers and a look with no time change; the sampler's looks are dials; CO-OP BRAWLER; the wheel scrolls the menus. A normal run is v0.84p's */   /* v0.84p — THE COMBAT STUDIO: the dev menu's COMBAT STUDIO row starts the living depths with his seat the humans' and a computer harvester that follows him; 48 dials on his sword and dash (all v0.84o's numbers by default, live only in a studio run), A / B on SELECT, presets and slots, a timeline strip */   /* v0.84o — HIS QC OF v0.84n: the ore-back's slam 12 (was 28) and the great bat's dive 6 (was 10); the rat packs ramp 8-10, 10-12, 12-14 and 14 through the clock, spread over 18-110 px, under a cap of 64; kill XP is three orbs — small 2, medium 10, large 50 — paid by the kind (a rat or a Dripper a small, a slug three, a great bat a medium, an ore-back two, the Motherlode two larges, a gilded body twice its orbs), a board's pile mediums and smalls; the ore lights shrink (mini and shell 45, side vein and Motherlode 150) and every dim light is 25 % darker; STAY DOWN puts a stirring shell back down for its full time; the main room's camera beats an ore camera while it holds her; his charge ring, the blasts, the shout, CINDER's fire and her whirlwind are drawn at the feet; her lantern's dashed ring is gone and GILT HALO is gold leaves; every menu takes A / Enter / Space to confirm and B / Esc / Backspace to go back, and the mouse; DEEP IN THOUGHT (hers): a new board slows the enemies to 30 % for 1.5 s, eased back over 5 s, under a cool held breath. v0.84n — THE TWO CARDS: RESONANT LINE is the held note — a gold dot her line holds fires at the nearest foe within 360 of the ore, first on the cross and then every 1.5 s while the line stays through it (2 damage, 0.4 s stun; nothing in reach and the beat waits); HOT SPOT, the triangle torch — an edge of a triangle cell she draws sweeps a tongue of flame a quarter turn round the ore she is mining, corner to corner the way she drew it (0.35 s; reach 400, stopped by walls; 4 to every body it passes; full light and 0.3 s more; it clears slime; never hurts the couple; once per edge per board). The board shows the held dot's rings and arc and the burning edge. v0.84m — THE BOTS, AND THE MAIN EVENT ROOM AS A SET PIECE: the computer couple score a hand by the verbs they use and use them — his charged attack in a crowd, his throw at a foe out of reach (a bat first), the charged throw that plants SENTRY and a flare-ready throw into the dark while guarding her board; her lantern flare and whirlwind when crowded, her channel with a channel card; their Motherlode memory is reset every run; the log counts every card's use, the sentry's bursts and kills while climbing out. In the depths each main-ore solve releases, as the light steps down: rats and Drippers, then slugs and two ore-backs, then the bats, then a Motherlode, and again (no banners). The main ore wears five tier gems that come off with five chunks, top first, and twelve small gems that never deplete and twinkle; it never goes spent and the greed crystal is gone. The main room's floor is ringed scars round the ore, and each map rolls the room's mini ores: four corners, door posts, the avenue or the henge (extra, uncounted). v0.84l — HIS RULINGS AFTER v0.84k: the main room's camera takes over only once she is far enough in that framing her needs no zoom-out (and lets go on the same line); a side vein room is framed only while she is on its board; rats, Drippers and ore-backs are born in dim or dark light anywhere in the band round you (her ring has no priority); in the depths a rat climbs out of a burrow in the floor (the mark 0.6 s, the climb 0.45 s, harmless, hittable once it climbs; the hole fades), a pack's rats start at their own moments and a pack is as big as fits; fire is full light again; the hum's banner is cut; OIL-SOAKED is SPOILS; the escape raises one wall of ore-backs per main-ore solve, spread evenly home, the last the square, each ore-back rising after its own 0-0.6 s; SCOUT FLARE returns (a road flare on every blade of a throw, 8 s, recharging 12 s); SENTRY (his charged throw leaves a sentry drum for 16 s that fires three-shot bursts at the nearest foe). v0.84k — THE MAIN EVENT ROOM AND THE LIGHT RULES: in the depths the main event room is 30 x 23 tiles with the ore in its centre and the side vein rooms 16 x 11; THE BREATH and the gilded brute are cut; the room camera frames the main and side rooms while she is in them (it takes over 5 tiles from a door, blends in 0.6 s and out 1.0 s, and keeps him in view); every light is full, dim, or a full centre with a dim ring — nothing is born in full light, and in dim light only rats, Drippers and ore-backs; his light is her empty lantern (64 px); the ores' light is dim and shrinks with every board solved to nothing (main 550, side vein 220, mini 90). v0.84j — HIS QC: the hand says PICK ONE; the side vein's hum is gone; the depths' dark past the map is the rock's colour; a bottom wall's mini silhouettes. v0.84i — THE CARDS: SPIRIT LINK and POWDER KEG are commons; OIL RUNNER is split — OIL RUNNER (he carries canisters to her) and OIL-SOAKED (enemies sometimes drop one). v0.84h — HIS QC OF v0.84: an ore under a wall top keeps its gem in the silhouette; the depths' halls 4-7 wide and rooms small / medium / large; one ladder of tier marks for every ore but the main one (diamond, cross, star, 8-point star, brilliant). v0.84g — THE BOTS' PACE: the computer's fighter no longer swings at a downed ore-back (only STAY DOWN's stirring shell); the dev menu's PACE — SPEEDRUN (straight to the main event, then home), STANDARD (the default: side veins, minis and ore-backs on the way, running when it gets crowded, the Motherlode and its chest, then the main event) and SLOW (never the main event). v0.84f — HIS QC OF v0.84 (readability): an ore-back's gem says its board's tier (a plain diamond, a 4-point star, an 8-sided brilliant), rolled when it spawns so it shows while it walks; a wall top no longer hides a rock's floor clock (it comes back as a silhouette), its prompt or a lone XP orb, and a shelled ore-back behind one is drawn in the ore's colour; the veins, the ore-backs and the Motherlode stay solid when someone is behind them and draw them back over themselves as silhouettes; the kit bar under his health is gone, his shout's arc and SNARE READY are gone — his core burns violet while the shout is ready; no P1 / P2 over their heads or on the HUD. v0.84e — HIS QC OF v0.84d: the walk out of the cave mouth is 1 s and stops just in front of it (play starts there); the kneel is a slight lean and a deeper drop (no more tipping over); he hands her a can only when she has room for a whole one; the computer's fighter picks up the XP around him while she is on a board; her light no longer swells when she gets oil (the lantern still glints). v0.84d — THE ART: at a well she kneels and sets her lantern down to the seep while it fills, even on the move (she scampers along); her swing, spin, dash and the rest play over it and she kneels again after; the flame flares when she is full; the floating ladle is gone; her light always matches her oil. THE CAVE MOUTH (the depths): a ragged arch in the start room's top wall is the way in and the way home — after the level card the two of you walk out of it for 2 s, and control and the clock start when the walk ends; from the escape's start pale daylight pours out of it. Every level's card shows only its name. The main event chamber's floor is the corridors' floor on every level, with a row of plain kerbstones on the depths' thresholds. v0.84c — THE BOTS PICK UP XP, AND THE LOOP: the computer-played couple go for XP orbs near them (his reach 200 px, hers 140 px), never into a fight or off a board for one; the dev menu's LOOP plays computer runs back to back (seed + 1 each, one telemetry file each) until Esc or START. v0.84b — POWDER KEG AND STAY DOWN: POWDER KEG (hers, epic) — when she finishes an ore-back, a small ore, a side vein or the Motherlode (never the main ore), a gold keg takes its place and blows after 3 seconds, breaking the ore-backs and small ores beside it and hitting enemies for 12 (the Motherlode is only knocked back; the two of you are shoved, never hurt), in a short gold-embered cloud; STAY DOWN counts only his main weapon (the swing, the dash attacks, the flurry and the charged release — not thrown blades, Storm zaps or her pick). v0.84a — THE CARDS AND THE BOTS, PART ONE: cards are COMMON or EPIC (the epics: LODESTONE, HOARFROST LIGHT, WARDING CHARGE, STORM STRIKE, HARVEST PULSE, SPIRIT LINK, TWIN THROW, GILT HALO — and POWDER KEG when it lands), and the share of epics in a hand climbs with the level's clock events (10 % at the start, 25 / 40 / 55 / 70 % after each event, 85 % after the last); no card repeats in a hand; an epic wears a gold-foil frame with scrolls in its corners and a shimmer; SPIRIT LINK recharges after a minute, and a card with a cooldown shows it on its chip (dimmed, the border filling back clockwise, a flash when ready); new cards: SHATTERING SHOUT and SHATTERING SPIN (a 35 % chance to break each ore-back and small ore in reach — a broken ore pays nothing, and her board on it is blown apart), STAY DOWN (his hit on a stirring shell keeps it down 4 s longer, once per shell; a glint on the shell says when), OIL RUNNER (10 % of kills drop an oil canister; he carries two on his belt and walking into her fills her tank); pickups kneel, and her lantern flares whenever she gets oil; THE DEV MENU (F9 or SELECT on the main menu): WATCH THE COMPUTER PLAY — both seats played by the computer (a stand-in solver on her boards), at x1 / x2 / x4, flagged in the telemetry, never a record. v0.84 — THE FIRST v0.84 BUILD: an ore-back climbing out of the floor has no collision until it is fully out; the escape's rock lines every 20 tiles home (was 15); XP orbs never land inside a rock or a wall — a board's pile pops to a ring beyond the ore's edge on her side, a body's orb is nudged to clear floor, a rising or walking rock pushes orbs out; FLOOR EFFECTS are circles, on the feet, and hidden under the walls (clipped to the floor and under the lifted tops; her light untouched); THE GREED: the third main-ore solve opens THE PRIZE OF THE DEPTHS IS YOURS (AWESOME held by either player, time holds), then the run is in THE GREED (the spawner, the enrage, the set pieces and every board live; no horde) with her LEAVE / ONE MORE menu, and THE ESCAPE starts the frame both of you are outside the main event chamber — the shockwave is gone, the boards never close, the phase banners (THE ESCORT, THE MAIN EVENT, RUN!) and OIL +N are gone; THE EFFECT TIERS: full / light / min read once a frame (light at 16 foes or 20 fx on screen; min in the escape past the first rock line or when frames run long) — no shadow blur outside full, LANTERN STRIKE, the halo, the rings and the bursts drawn lighter; ?fx=full keeps the old look. v0.83s — a spent side or mini vein is no longer solid (the main ore stays solid); the floor's cracks, splashes and ground fires never draw over a wall; the depths' wall tops are black (only their outline glows) — the faces keep their art and lamps; what a wall top hides is drawn over it as a flat silhouette in its colour. v0.83r — RB starts the NEAREST ore (to the edge of its rock), and only that ore shows its prompt; on a board she MINES — each step of the line swings her pick at the ore, and she rests the pick when the line stops. v0.83q — THE ROCK IS SOLID: the ores, the ore-backs and the Motherlode are walls (an ore-back stops against you, never pushes), and to his blades a curled rock or an ore is stone (RICOCHET bounces off it); THE DASH GOES THROUGH walls and rocks and ends on the farthest floor along its line; FLOWING OIL only refills the wells faster; the depths' walls are raised blocks — you walk behind a room's bottom wall and it thins over you; in the depths' escape a LINE of 3-5 ore-backs rises across the route ahead every 15 tiles home, and once, in the last 30, a SQUARE of 12 rises round you in a chamber. v0.83p — LODESTONE and ARIADNE'S THREAD are cards again; a chest rolls map 30 / compass 30 / XP + oil 40; the bar rises 25 XP a hand (325, 350, 375 ...); the hand's hold is 1.2 s. v0.83o — on the card hand her frame starts on the left (where it always was) and his on the right; the hint says one card for you both. v0.83n — THE SYMMETRIC HAND: each of you moves a frame on the card hand and HOLDS ACTION 2 s to take the card, with a burst on the lock; the item box pops and bursts, and either of you says NICE; her dash spin hits for 1; the Living Depths' portal and level card get their flavour art (the card 1.5 s longer). v0.83m — a chest item is announced in a box that freezes the run (YOU GOT THE MAP! — NICE); her whirlwind hits for her baseline swing's damage (1 a spin tick; it was zero). v0.83l — HIS SHOUT CHARGES: hold the snare to grow its ring (150 -> 220 px over 1.2 s), release to shout; everything the shout does, REAPING SNARE's yank included, reads the charged ring. v0.83k — the baseline orb magnet 30 px / 80 px/s (was 48 / 200); HOARFROST slows to 50 % (was 25 %) and its drawing is calmer (nothing turns); the pressure spawner's rat packs 6-7 (was 4-5), spread wider. v0.83j — HOARFROST slows only in her lit centre; the Crawl 6:45, the Roost 10:00, the Motherlode 13:15 (the Quickens stays 15:30); every orb drifts from 48 px (LODESTONE: 160); REAPING SNARE (his) and HARVEST LIGHT (hers) pull the orbs in. v0.83i — PENUMBRA replaces SWELLING LIGHT: passive, her light's dim rim reaches 40 % further and the fully lit centre is 30 % smaller; no channel or flare doubling. v0.83h — THE FLOOD AT 3:00 (was 4:00; its pressure row moves with it); the escape's spawner and flights count only the bodies within 700 px of you; the depths' escape pours a fallback chamber flood every 25 tiles without one. v0.83g — A FULL TANK: her oil starts every run at 100 (was 34). v0.83f — HER REROLL, AND TWO RULES: B held 2 s on an open board deals a different board at the same difficulty (3-minute cooldown, a dial in the panel's corner); RESONANT LINE, STORM STRIKE's chain and the cross-cut no longer pick a downed ore-back or Motherlode (SEEKING THROW's rule, one helper); every chest rolls — map 20 / compass 20 / LODESTONE 20 / ARIADNE'S THREAD 10 / XP + oil 30, a found item's share going to XP + oil. v0.83e — THE GAME IS LOUD ENOUGH (his note): the sound bus +12 dB (a lone sound peaked -16 to -31 dBFS; busGain 0.7 -> 2.8), and a VOLUME row in the pause menu (0-120 %, 100 the default, left / right or RB, remembered with the options). v0.83d — HIS QC OF v0.83c: the held items' icons get their own shelf under the minimap (they read as POI pips); the depths' wall faces stand IN the wall (they hung over the floor, so a body against a wall stood on its face); her pickaxe hits for 1 (a rat in two), QUARRY EDGE for 4 (his sword's), the castle's pick-chips-masonry rule retired; an active ore-back takes 25 % of a shove, the Motherlode none; LODESTONE and ARIADNE'S THREAD are chest items with the map and the compass (four, shuffled per run), no longer cards; SEEKING THROW does not chase a shelled, rising or getting-up rock. v0.83c — ONE PRESSURE SPAWNER (his rule): v0.83b's separate timers for the ore-back, slug, great bat and rat packs are folded back into the pressure spawner's table — each band row says what it fills with (mix), what it sends on a beat (beat) and what it sends in packs (pack); same numbers. v0.83b — HIS SECOND COUCH RUN (2026-09-25 late night): the ore-back's board a random tier 1-3, paying double the same-tier mini; the depths' side boards 40/70/120; an elite's chest a 30 % chance; the Dripper takes two swings; the depths' spawner fills with Drippers only, thinner, while the ore-back, slug and bat keep their own clocks and the rats come in packs of 4-5; the Flood 5 + 1 a second. v0.83a — HIS COUCH NOTES (2026-09-25 night): the depths renamed THE LIVING DEPTHS; the ore-backs' spawner share halved (not capped); their shell 13 s; IT STIRS (the board shakes, the rock trembles in its last 3 s); floor effects under the bodies; in the depths the first two gilded ones killed drop the chests (the compass / the map). v0.83 — THE LIVING DEPTHS (re-scoped 2026-09-25: the depths playable tonight, the other six levels untouched but for her light and the ore): her light has a fully lit centre and a DIM RING (the outer 35 %) where poor-light kinds are born (SPAWN_LIGHT — Drippers drop from the roof, ore-backs climb out of the floor); the ore is the neon rock (M3 THE HEARTSTONE 220 px / rock B 120 px / m1 THE NUGGET 36 px, HIS ROCK, HER CRYSTAL #7cc8ff / #ffcf7a, chips bitten off as it is mined, glints + shimmer + motes as pre-drawn sprites, painted by its foot and see-through at 0.55 when someone stands behind it); the depths\' cast redrawn (the rat, the great bat in side view with the fixed dive — a hard lock, a last-instant re-aim, near full speed from the first frame — the spotted slug, the Dripper that drips in from the roof and splashes out, the ore-back = m1 on two legs, red while active); THE ORE-BACK\'S SHELL: an active ore-back takes no damage, STRUCK 3 times it retreats into its shell for 10 s and its mini board opens — solved, it breaks and pays; it gets up at the same health (the red X if she is on it); THE DEPTHS CLOCK — THE FLOOD 4:00 (rats + Drippers) · THE CRAWL 7:30 (slugs through and back, two ore-backs rising in the dim ring, permanent slime at 0.40) · THE ROOST 10:30 (the Wheel, the Comb, the Pincer) · THE MOTHERLODE 13:30 (a bigger ore-back: struck 12 → a side vein with three boards, checkpoints, the third kills it and drops the CHEST — the first chest off an enemy; undertuned on purpose) · THE DEEP QUICKENS 15:30 (today\'s escalation, named); the roster ladder (rat after the Flood, slug after the Crawl, bat after the Roost); each event with its ten-second line, a flourish that may cover the couple (the cracks in the ore-back\'s red), the sampler\'s score, event_fire and per-event damage; fire clears slime and the buffed Cinder leaves a ground fire; THE LIVING ART: six baked art stages (chunked, the v0.82 raster rule), 48 px wall faces (the low camera), roof drips from stage 3, the heartbeat from stage 4; THE BLACK DAMP is THE BREATH; no event rooms in the depths. v0.82 — THE FRAME BUDGET (their ask of 2026-09-20, the late-run choppiness): the time was in the raster, not the JS — ~600 shadow-blurred draws a frame in the escape against 130 at the start — so a walker's glow (and a crystal's) is a sprite of its own shadow cast once and drawn under a flat body, the wall-edge glow is three wide faint strokes, and off-screen walkers and crystals are not drawn (PERF.glow 'fast'; ?glow=blur is the old painter); the log learns the frame INTERVAL (summary.frames, the `hitch` event); the 30 s autosave reads a per-type index and is built and POSTed by a worker handed only the new events; the pad latch is one buttons-only read every 4 ms while a pad is claimed. v0.81 — THE DUNGEON RETALIATES (the design of 2026-09-20): every solve on the MAIN ore raises the enrage by one and fires the level's set piece, which then LEAVES THE ROOM and stays in the dungeon for the rest of the run (the eclipse roams, curtain walls rise across random corridors, a gas patch laps the depths' loop, THE MAW wanders the desert, the squall sweeps the whole sheet, a heavy shell patrols the road, the seance relights in a random hall) — the ONE MORE pick only reopens the board; every vein camera centres the ORE and zooms out to keep him on screen, the mini veins get one, and the main one is on only while she is at the board; the wells are dealt evenly by WALKING distance on every level (desert / glacier +2); new card SPILLAGE (hers); a sprint FIRES his held charge; ARIADNE'S THREAD runs main vein -> exit, world only, in the couple's light only; highest ENRAGE per level is a record. v0.80 — THE SPRINT, AND FIVE REPAIRS (their calls of 2026-09-19): a dash button still held when the burst ends is a SPRINT (1.45x the walk, no i-frames, both players; the dash attack is open anywhere in it and ends it; EMBER DASH's trail runs through it; new card RUNNING START); WARDING CHARGE takes a 6 s recharge; the map no longer shows the POIs (the gates read WALKED); bodies and furniture are painted by their feet; the boomerang is ONE blade — out is the tap, back is the hold, it hangs as a saw at its apex; the cactus bites on the blocked step. v0.79 — THE TRIANGLES TAKE THREE SEATS (their call): roots leave the forest's ladder, the quicksand leaves the desert's and the glide leaves the glacier's, and the triangle (two to a board — these are 6 x 5s) takes each seat, deep-vein cycles included. The glacier keeps its root and the manor is untouched (their calls). All three families STAY ON THE RAINBOW ROAD — THE DRAW never read a ladder — with their engines whole. THE TWIN leaves THE DRAW, so nothing deals it now; its engine stays, the v0.43 way. */
+const GAME_VERSION = 'PUZZLE PUNCH v0.85r';   /* v0.85r — THE PLAYTEST PATCH: her pad at the ore (B leaves, RB held rerolls), BASH in FLINCH's place and PIN a root, the free bats' dive gate, the Sister Blades' special to Hades II's files, LANTERN STRIKE always on its light path, the side veins dealt 1-5 with the minis' marks and a stump, her pick chain SNAPPY with a cancel point */   /* v0.85q — THE HUB AFTER A RUN (her chain state reset at every start), THE ROOST'S TIME (the same shapes, more time), the log's rock field (wall / vein / roam), FLINCH and STAGGERING BLOWS, and THE SISTER BLADES (Hades II's daggers, his third weapon) */   /* v0.85p — THE FOREST SAMPLER IN THE DEV MENU: a FOREST SAMPLER row opens the newest forest playable sampler through the helper, with its telemetry. A run plays as v0.85o's */   /* v0.85o — THE CHAMBER FLOODS ON EVERY WAY HOME: every room of the depths is a post, fired from inside the room */   /* v0.85n — THE BALANCE PASS: her chain and the keg resized, the stagger off the couple's attacks, SLOW DRIP as a drip, the escape's walls out of its count, the end screen's tally, the keg's blast redrawn, more telemetry */   /* v0.85m — HER ATTACKS: the three-tap chain and the pirouette, her dash matched to his, the flare's feel and the raised lantern; screen shake for big moments only */   /* v0.85l — BOARDS IN ADVANCE, POWDER KEG's REACH, THE BIG MAP */   /* v0.85k — HIS QC OF v0.85j, AND TEMPERED */   /* v0.85j — START THE RUN AGAIN: a row on the combat studio's page starts a new studio run with the dials as they are */   /* v0.85i — SIZES IN THE COMBAT STUDIO: seven trial dials on the studio's SHARED tab (enemies, the two players, the ore-back, hit boxes, the mine, the zoom, Hades' numbers); a studio run's side B only */   /* v0.85h — THE SLAM RINGS OVER THE WALL TOPS: while an ore-back or the Motherlode winds up, the part of its ring a wall top covers is drawn over it, flat red; the rocks' new legs, eye and shadow stay under a wall top (flat shapes), and so do the slam's cracks */   /* v0.85g — THE DEPTHS ATTACK POSES: drawn windups, strikes and tired poses for the Dripper (it stands up on its strings and throws itself at you), the rat (it rears and lunges, one clack), the slug (it arches, its mouth bursts open and gnashes, it springs), the great bat (wings back, a screech, a dart; on the Hades II bird's logic), the ore-back and the Motherlode (thick legs; crouch, hop, stomp); the bite carries the body forward; Hades' white fade on every windup; no biter rings, no green dashed ring, no bat ring or line; the rocks' cracks stay on the floor */   /* v0.85f — THE LINE PUZZLES: TAP AND GLIDE (a flick is one step, held 0.2 s it glides at 7.5 points a second, let go between points and it finishes to the nearer; the stick read by its angle, undo only straight back, a diagonal into a wall takes the open way, a blocked step bumps and knocks; after a solve the stick must be let go); the ORE VEIN IN TODAY'S COLOURS (the rock face, the cracks as a groove, the cyan line with a white core, the glint head, chips, the round start, the waking exit, gems with no dark disc, the grey-blue frame; failed clues ring red; triangles count live; a solve's pulse as a fading picture); PICK AND STONE (four tinks, a pebble scrape, a knock, a crystal ring, a thud, the crack and the shimmer; a slide is silent); her rumble on the board */   /* v0.85e — ZAG'S SWORD AT HADES' SIZES: the three strikes, the dash strike and the plunge at Hades x 0.38 (strike 1 a sweep, strike 2 a box, strike 3 a charged lunge with a box that rides with him); Zag's windups, stuns, chain windows and feet; the lock-on; the pierce grown with the thrust, the charged plunge x 1.6 of the new plunge; the damage today's */   /* v0.85d — DESCURA AT HADES II'S SIZES: the flying-wedge strikes that lock on, the long burst 410 each way from a full 0.8 s charge, its light where it fired, the spear and the orb at Hades' sizes, the orb's burst, the specials' curve; the damage toward Hades' proportions; the wells pour in the main event too */   /* v0.85c — THE HUB'S FEET: the combat layer ticks in the hub, the practice hall and the staged scenes (a move no longer locks his feet there for good) */   /* v0.85b — HIS QC OF v0.85a: DESCURA MEL'S WAY (forward strikes, planted charges, the long burst both ways and firing itself, the spear and the orb on release, the lock-on), her oil, the bots' sprint, the Drippers' timing, the dev seed, the longer dash, RUNNING START out */   /* v0.85a — THE LOOKS: GILDED TITAN's orbs and gold giant, CINDER CHARGE's running fire, PLINK!'s knives, the rare frame, the six icons, the armory's weapons */   /* v0.85 — WEAPONS AND COMBAT: THE STYGIAN BLADE and DESCURA in the real game (CO-OP ZAG's feel), the old weapons gone, the card pool for the new kits (hooks, shots, new and reworked cards, rarity), the orb fade, the per-card ledger, the computer's new sword */   /* v0.84v — THE WEAPONS BUILD: his and her arms reach their grips (every run); in the combat studio, the broadsword, THE PIERCE, THE PLUNGE and MEL'S STAFF. A normal run plays as v0.84u's */   /* v0.84u — THE COMBAT STUDIO: each player's own rumble (his events on his controller, hers on hers; her own strength dial). A normal run is v0.84t's */   /* v0.84t — THE COMBAT STUDIO: YOU PLAY · BOTH (two players on two controllers); TOP BUTTON · THROW / SMASH at the top of the page; the preset CO-OP ZAG. A normal run is v0.84s's */   /* v0.84s — THE COMBAT STUDIO: a preset is BOTH, HIM ONLY or HER ONLY; HADES-LIKE, HEAVY and CO-OP BRAWLER carry her dials; ZAG'S BLADE (him only); SEQUENCE · CLEAVES / ZAG'S (strike, chop, thrust) and MIDDLE CUT DAMAGE. A normal run is v0.84r's */   /* v0.84r — THE COMBAT STUDIO, THIRD PASS: the camera has no farthest zoom and no leash (every run); in a studio run her leash holds for everything but a board she has started; the page has tabs and the spear, the fangs, the boomerang and her kit have dials; THE SMASH is the sword's top button as a trial; the person plays him or her. Outside the camera, a normal run is v0.84q's */   /* v0.84q — THE COMBAT STUDIO, SECOND PASS: her bot leaves the menus to him and tops her oil up; the hit, effect and dash dials are live on every weapon; THE THROW, THE SHOUT and the release's recovery have dials; the kill beat has four triggers and a look with no time change; the sampler's looks are dials; CO-OP BRAWLER; the wheel scrolls the menus. A normal run is v0.84p's */   /* v0.84p — THE COMBAT STUDIO: the dev menu's COMBAT STUDIO row starts the living depths with his seat the humans' and a computer harvester that follows him; 48 dials on his sword and dash (all v0.84o's numbers by default, live only in a studio run), A / B on SELECT, presets and slots, a timeline strip */   /* v0.84o — HIS QC OF v0.84n: the ore-back's slam 12 (was 28) and the great bat's dive 6 (was 10); the rat packs ramp 8-10, 10-12, 12-14 and 14 through the clock, spread over 18-110 px, under a cap of 64; kill XP is three orbs — small 2, medium 10, large 50 — paid by the kind (a rat or a Dripper a small, a slug three, a great bat a medium, an ore-back two, the Motherlode two larges, a gilded body twice its orbs), a board's pile mediums and smalls; the ore lights shrink (mini and shell 45, side vein and Motherlode 150) and every dim light is 25 % darker; STAY DOWN puts a stirring shell back down for its full time; the main room's camera beats an ore camera while it holds her; his charge ring, the blasts, the shout, CINDER's fire and her whirlwind are drawn at the feet; her lantern's dashed ring is gone and GILT HALO is gold leaves; every menu takes A / Enter / Space to confirm and B / Esc / Backspace to go back, and the mouse; DEEP IN THOUGHT (hers): a new board slows the enemies to 30 % for 1.5 s, eased back over 5 s, under a cool held breath. v0.84n — THE TWO CARDS: RESONANT LINE is the held note — a gold dot her line holds fires at the nearest foe within 360 of the ore, first on the cross and then every 1.5 s while the line stays through it (2 damage, 0.4 s stun; nothing in reach and the beat waits); HOT SPOT, the triangle torch — an edge of a triangle cell she draws sweeps a tongue of flame a quarter turn round the ore she is mining, corner to corner the way she drew it (0.35 s; reach 400, stopped by walls; 4 to every body it passes; full light and 0.3 s more; it clears slime; never hurts the couple; once per edge per board). The board shows the held dot's rings and arc and the burning edge. v0.84m — THE BOTS, AND THE MAIN EVENT ROOM AS A SET PIECE: the computer couple score a hand by the verbs they use and use them — his charged attack in a crowd, his throw at a foe out of reach (a bat first), the charged throw that plants SENTRY and a flare-ready throw into the dark while guarding her board; her lantern flare and whirlwind when crowded, her channel with a channel card; their Motherlode memory is reset every run; the log counts every card's use, the sentry's bursts and kills while climbing out. In the depths each main-ore solve releases, as the light steps down: rats and Drippers, then slugs and two ore-backs, then the bats, then a Motherlode, and again (no banners). The main ore wears five tier gems that come off with five chunks, top first, and twelve small gems that never deplete and twinkle; it never goes spent and the greed crystal is gone. The main room's floor is ringed scars round the ore, and each map rolls the room's mini ores: four corners, door posts, the avenue or the henge (extra, uncounted). v0.84l — HIS RULINGS AFTER v0.84k: the main room's camera takes over only once she is far enough in that framing her needs no zoom-out (and lets go on the same line); a side vein room is framed only while she is on its board; rats, Drippers and ore-backs are born in dim or dark light anywhere in the band round you (her ring has no priority); in the depths a rat climbs out of a burrow in the floor (the mark 0.6 s, the climb 0.45 s, harmless, hittable once it climbs; the hole fades), a pack's rats start at their own moments and a pack is as big as fits; fire is full light again; the hum's banner is cut; OIL-SOAKED is SPOILS; the escape raises one wall of ore-backs per main-ore solve, spread evenly home, the last the square, each ore-back rising after its own 0-0.6 s; SCOUT FLARE returns (a road flare on every blade of a throw, 8 s, recharging 12 s); SENTRY (his charged throw leaves a sentry drum for 16 s that fires three-shot bursts at the nearest foe). v0.84k — THE MAIN EVENT ROOM AND THE LIGHT RULES: in the depths the main event room is 30 x 23 tiles with the ore in its centre and the side vein rooms 16 x 11; THE BREATH and the gilded brute are cut; the room camera frames the main and side rooms while she is in them (it takes over 5 tiles from a door, blends in 0.6 s and out 1.0 s, and keeps him in view); every light is full, dim, or a full centre with a dim ring — nothing is born in full light, and in dim light only rats, Drippers and ore-backs; his light is her empty lantern (64 px); the ores' light is dim and shrinks with every board solved to nothing (main 550, side vein 220, mini 90). v0.84j — HIS QC: the hand says PICK ONE; the side vein's hum is gone; the depths' dark past the map is the rock's colour; a bottom wall's mini silhouettes. v0.84i — THE CARDS: SPIRIT LINK and POWDER KEG are commons; OIL RUNNER is split — OIL RUNNER (he carries canisters to her) and OIL-SOAKED (enemies sometimes drop one). v0.84h — HIS QC OF v0.84: an ore under a wall top keeps its gem in the silhouette; the depths' halls 4-7 wide and rooms small / medium / large; one ladder of tier marks for every ore but the main one (diamond, cross, star, 8-point star, brilliant). v0.84g — THE BOTS' PACE: the computer's fighter no longer swings at a downed ore-back (only STAY DOWN's stirring shell); the dev menu's PACE — SPEEDRUN (straight to the main event, then home), STANDARD (the default: side veins, minis and ore-backs on the way, running when it gets crowded, the Motherlode and its chest, then the main event) and SLOW (never the main event). v0.84f — HIS QC OF v0.84 (readability): an ore-back's gem says its board's tier (a plain diamond, a 4-point star, an 8-sided brilliant), rolled when it spawns so it shows while it walks; a wall top no longer hides a rock's floor clock (it comes back as a silhouette), its prompt or a lone XP orb, and a shelled ore-back behind one is drawn in the ore's colour; the veins, the ore-backs and the Motherlode stay solid when someone is behind them and draw them back over themselves as silhouettes; the kit bar under his health is gone, his shout's arc and SNARE READY are gone — his core burns violet while the shout is ready; no P1 / P2 over their heads or on the HUD. v0.84e — HIS QC OF v0.84d: the walk out of the cave mouth is 1 s and stops just in front of it (play starts there); the kneel is a slight lean and a deeper drop (no more tipping over); he hands her a can only when she has room for a whole one; the computer's fighter picks up the XP around him while she is on a board; her light no longer swells when she gets oil (the lantern still glints). v0.84d — THE ART: at a well she kneels and sets her lantern down to the seep while it fills, even on the move (she scampers along); her swing, spin, dash and the rest play over it and she kneels again after; the flame flares when she is full; the floating ladle is gone; her light always matches her oil. THE CAVE MOUTH (the depths): a ragged arch in the start room's top wall is the way in and the way home — after the level card the two of you walk out of it for 2 s, and control and the clock start when the walk ends; from the escape's start pale daylight pours out of it. Every level's card shows only its name. The main event chamber's floor is the corridors' floor on every level, with a row of plain kerbstones on the depths' thresholds. v0.84c — THE BOTS PICK UP XP, AND THE LOOP: the computer-played couple go for XP orbs near them (his reach 200 px, hers 140 px), never into a fight or off a board for one; the dev menu's LOOP plays computer runs back to back (seed + 1 each, one telemetry file each) until Esc or START. v0.84b — POWDER KEG AND STAY DOWN: POWDER KEG (hers, epic) — when she finishes an ore-back, a small ore, a side vein or the Motherlode (never the main ore), a gold keg takes its place and blows after 3 seconds, breaking the ore-backs and small ores beside it and hitting enemies for 12 (the Motherlode is only knocked back; the two of you are shoved, never hurt), in a short gold-embered cloud; STAY DOWN counts only his main weapon (the swing, the dash attacks, the flurry and the charged release — not thrown blades, Storm zaps or her pick). v0.84a — THE CARDS AND THE BOTS, PART ONE: cards are COMMON or EPIC (the epics: LODESTONE, HOARFROST LIGHT, WARDING CHARGE, STORM STRIKE, HARVEST PULSE, SPIRIT LINK, TWIN THROW, GILT HALO — and POWDER KEG when it lands), and the share of epics in a hand climbs with the level's clock events (10 % at the start, 25 / 40 / 55 / 70 % after each event, 85 % after the last); no card repeats in a hand; an epic wears a gold-foil frame with scrolls in its corners and a shimmer; SPIRIT LINK recharges after a minute, and a card with a cooldown shows it on its chip (dimmed, the border filling back clockwise, a flash when ready); new cards: SHATTERING SHOUT and SHATTERING SPIN (a 35 % chance to break each ore-back and small ore in reach — a broken ore pays nothing, and her board on it is blown apart), STAY DOWN (his hit on a stirring shell keeps it down 4 s longer, once per shell; a glint on the shell says when), OIL RUNNER (10 % of kills drop an oil canister; he carries two on his belt and walking into her fills her tank); pickups kneel, and her lantern flares whenever she gets oil; THE DEV MENU (F9 or SELECT on the main menu): WATCH THE COMPUTER PLAY — both seats played by the computer (a stand-in solver on her boards), at x1 / x2 / x4, flagged in the telemetry, never a record. v0.84 — THE FIRST v0.84 BUILD: an ore-back climbing out of the floor has no collision until it is fully out; the escape's rock lines every 20 tiles home (was 15); XP orbs never land inside a rock or a wall — a board's pile pops to a ring beyond the ore's edge on her side, a body's orb is nudged to clear floor, a rising or walking rock pushes orbs out; FLOOR EFFECTS are circles, on the feet, and hidden under the walls (clipped to the floor and under the lifted tops; her light untouched); THE GREED: the third main-ore solve opens THE PRIZE OF THE DEPTHS IS YOURS (AWESOME held by either player, time holds), then the run is in THE GREED (the spawner, the enrage, the set pieces and every board live; no horde) with her LEAVE / ONE MORE menu, and THE ESCAPE starts the frame both of you are outside the main event chamber — the shockwave is gone, the boards never close, the phase banners (THE ESCORT, THE MAIN EVENT, RUN!) and OIL +N are gone; THE EFFECT TIERS: full / light / min read once a frame (light at 16 foes or 20 fx on screen; min in the escape past the first rock line or when frames run long) — no shadow blur outside full, LANTERN STRIKE, the halo, the rings and the bursts drawn lighter; ?fx=full keeps the old look. v0.83s — a spent side or mini vein is no longer solid (the main ore stays solid); the floor's cracks, splashes and ground fires never draw over a wall; the depths' wall tops are black (only their outline glows) — the faces keep their art and lamps; what a wall top hides is drawn over it as a flat silhouette in its colour. v0.83r — RB starts the NEAREST ore (to the edge of its rock), and only that ore shows its prompt; on a board she MINES — each step of the line swings her pick at the ore, and she rests the pick when the line stops. v0.83q — THE ROCK IS SOLID: the ores, the ore-backs and the Motherlode are walls (an ore-back stops against you, never pushes), and to his blades a curled rock or an ore is stone (RICOCHET bounces off it); THE DASH GOES THROUGH walls and rocks and ends on the farthest floor along its line; FLOWING OIL only refills the wells faster; the depths' walls are raised blocks — you walk behind a room's bottom wall and it thins over you; in the depths' escape a LINE of 3-5 ore-backs rises across the route ahead every 15 tiles home, and once, in the last 30, a SQUARE of 12 rises round you in a chamber. v0.83p — LODESTONE and ARIADNE'S THREAD are cards again; a chest rolls map 30 / compass 30 / XP + oil 40; the bar rises 25 XP a hand (325, 350, 375 ...); the hand's hold is 1.2 s. v0.83o — on the card hand her frame starts on the left (where it always was) and his on the right; the hint says one card for you both. v0.83n — THE SYMMETRIC HAND: each of you moves a frame on the card hand and HOLDS ACTION 2 s to take the card, with a burst on the lock; the item box pops and bursts, and either of you says NICE; her dash spin hits for 1; the Living Depths' portal and level card get their flavour art (the card 1.5 s longer). v0.83m — a chest item is announced in a box that freezes the run (YOU GOT THE MAP! — NICE); her whirlwind hits for her baseline swing's damage (1 a spin tick; it was zero). v0.83l — HIS SHOUT CHARGES: hold the snare to grow its ring (150 -> 220 px over 1.2 s), release to shout; everything the shout does, REAPING SNARE's yank included, reads the charged ring. v0.83k — the baseline orb magnet 30 px / 80 px/s (was 48 / 200); HOARFROST slows to 50 % (was 25 %) and its drawing is calmer (nothing turns); the pressure spawner's rat packs 6-7 (was 4-5), spread wider. v0.83j — HOARFROST slows only in her lit centre; the Crawl 6:45, the Roost 10:00, the Motherlode 13:15 (the Quickens stays 15:30); every orb drifts from 48 px (LODESTONE: 160); REAPING SNARE (his) and HARVEST LIGHT (hers) pull the orbs in. v0.83i — PENUMBRA replaces SWELLING LIGHT: passive, her light's dim rim reaches 40 % further and the fully lit centre is 30 % smaller; no channel or flare doubling. v0.83h — THE FLOOD AT 3:00 (was 4:00; its pressure row moves with it); the escape's spawner and flights count only the bodies within 700 px of you; the depths' escape pours a fallback chamber flood every 25 tiles without one. v0.83g — A FULL TANK: her oil starts every run at 100 (was 34). v0.83f — HER REROLL, AND TWO RULES: B held 2 s on an open board deals a different board at the same difficulty (3-minute cooldown, a dial in the panel's corner); RESONANT LINE, STORM STRIKE's chain and the cross-cut no longer pick a downed ore-back or Motherlode (SEEKING THROW's rule, one helper); every chest rolls — map 20 / compass 20 / LODESTONE 20 / ARIADNE'S THREAD 10 / XP + oil 30, a found item's share going to XP + oil. v0.83e — THE GAME IS LOUD ENOUGH (his note): the sound bus +12 dB (a lone sound peaked -16 to -31 dBFS; busGain 0.7 -> 2.8), and a VOLUME row in the pause menu (0-120 %, 100 the default, left / right or RB, remembered with the options). v0.83d — HIS QC OF v0.83c: the held items' icons get their own shelf under the minimap (they read as POI pips); the depths' wall faces stand IN the wall (they hung over the floor, so a body against a wall stood on its face); her pickaxe hits for 1 (a rat in two), QUARRY EDGE for 4 (his sword's), the castle's pick-chips-masonry rule retired; an active ore-back takes 25 % of a shove, the Motherlode none; LODESTONE and ARIADNE'S THREAD are chest items with the map and the compass (four, shuffled per run), no longer cards; SEEKING THROW does not chase a shelled, rising or getting-up rock. v0.83c — ONE PRESSURE SPAWNER (his rule): v0.83b's separate timers for the ore-back, slug, great bat and rat packs are folded back into the pressure spawner's table — each band row says what it fills with (mix), what it sends on a beat (beat) and what it sends in packs (pack); same numbers. v0.83b — HIS SECOND COUCH RUN (2026-09-25 late night): the ore-back's board a random tier 1-3, paying double the same-tier mini; the depths' side boards 40/70/120; an elite's chest a 30 % chance; the Dripper takes two swings; the depths' spawner fills with Drippers only, thinner, while the ore-back, slug and bat keep their own clocks and the rats come in packs of 4-5; the Flood 5 + 1 a second. v0.83a — HIS COUCH NOTES (2026-09-25 night): the depths renamed THE LIVING DEPTHS; the ore-backs' spawner share halved (not capped); their shell 13 s; IT STIRS (the board shakes, the rock trembles in its last 3 s); floor effects under the bodies; in the depths the first two gilded ones killed drop the chests (the compass / the map). v0.83 — THE LIVING DEPTHS (re-scoped 2026-09-25: the depths playable tonight, the other six levels untouched but for her light and the ore): her light has a fully lit centre and a DIM RING (the outer 35 %) where poor-light kinds are born (SPAWN_LIGHT — Drippers drop from the roof, ore-backs climb out of the floor); the ore is the neon rock (M3 THE HEARTSTONE 220 px / rock B 120 px / m1 THE NUGGET 36 px, HIS ROCK, HER CRYSTAL #7cc8ff / #ffcf7a, chips bitten off as it is mined, glints + shimmer + motes as pre-drawn sprites, painted by its foot and see-through at 0.55 when someone stands behind it); the depths\' cast redrawn (the rat, the great bat in side view with the fixed dive — a hard lock, a last-instant re-aim, near full speed from the first frame — the spotted slug, the Dripper that drips in from the roof and splashes out, the ore-back = m1 on two legs, red while active); THE ORE-BACK\'S SHELL: an active ore-back takes no damage, STRUCK 3 times it retreats into its shell for 10 s and its mini board opens — solved, it breaks and pays; it gets up at the same health (the red X if she is on it); THE DEPTHS CLOCK — THE FLOOD 4:00 (rats + Drippers) · THE CRAWL 7:30 (slugs through and back, two ore-backs rising in the dim ring, permanent slime at 0.40) · THE ROOST 10:30 (the Wheel, the Comb, the Pincer) · THE MOTHERLODE 13:30 (a bigger ore-back: struck 12 → a side vein with three boards, checkpoints, the third kills it and drops the CHEST — the first chest off an enemy; undertuned on purpose) · THE DEEP QUICKENS 15:30 (today\'s escalation, named); the roster ladder (rat after the Flood, slug after the Crawl, bat after the Roost); each event with its ten-second line, a flourish that may cover the couple (the cracks in the ore-back\'s red), the sampler\'s score, event_fire and per-event damage; fire clears slime and the buffed Cinder leaves a ground fire; THE LIVING ART: six baked art stages (chunked, the v0.82 raster rule), 48 px wall faces (the low camera), roof drips from stage 3, the heartbeat from stage 4; THE BLACK DAMP is THE BREATH; no event rooms in the depths. v0.82 — THE FRAME BUDGET (their ask of 2026-09-20, the late-run choppiness): the time was in the raster, not the JS — ~600 shadow-blurred draws a frame in the escape against 130 at the start — so a walker's glow (and a crystal's) is a sprite of its own shadow cast once and drawn under a flat body, the wall-edge glow is three wide faint strokes, and off-screen walkers and crystals are not drawn (PERF.glow 'fast'; ?glow=blur is the old painter); the log learns the frame INTERVAL (summary.frames, the `hitch` event); the 30 s autosave reads a per-type index and is built and POSTed by a worker handed only the new events; the pad latch is one buttons-only read every 4 ms while a pad is claimed. v0.81 — THE DUNGEON RETALIATES (the design of 2026-09-20): every solve on the MAIN ore raises the enrage by one and fires the level's set piece, which then LEAVES THE ROOM and stays in the dungeon for the rest of the run (the eclipse roams, curtain walls rise across random corridors, a gas patch laps the depths' loop, THE MAW wanders the desert, the squall sweeps the whole sheet, a heavy shell patrols the road, the seance relights in a random hall) — the ONE MORE pick only reopens the board; every vein camera centres the ORE and zooms out to keep him on screen, the mini veins get one, and the main one is on only while she is at the board; the wells are dealt evenly by WALKING distance on every level (desert / glacier +2); new card SPILLAGE (hers); a sprint FIRES his held charge; ARIADNE'S THREAD runs main vein -> exit, world only, in the couple's light only; highest ENRAGE per level is a record. v0.80 — THE SPRINT, AND FIVE REPAIRS (their calls of 2026-09-19): a dash button still held when the burst ends is a SPRINT (1.45x the walk, no i-frames, both players; the dash attack is open anywhere in it and ends it; EMBER DASH's trail runs through it; new card RUNNING START); WARDING CHARGE takes a 6 s recharge; the map no longer shows the POIs (the gates read WALKED); bodies and furniture are painted by their feet; the boomerang is ONE blade — out is the tap, back is the hold, it hangs as a saw at its apex; the cactus bites on the blocked step. v0.79 — THE TRIANGLES TAKE THREE SEATS (their call): roots leave the forest's ladder, the quicksand leaves the desert's and the glide leaves the glacier's, and the triangle (two to a board — these are 6 x 5s) takes each seat, deep-vein cycles included. The glacier keeps its root and the manor is untouched (their calls). All three families STAY ON THE RAINBOW ROAD — THE DRAW never read a ladder — with their engines whole. THE TWIN leaves THE DRAW, so nothing deals it now; its engine stays, the v0.43 way. */
 /* v0.78d — TWO LOOSE ENDS, both state outliving its context (v0.78b's stuck lean was the same shape): OPT.flourish never persisted, so an ACCESSIBILITY setting reset to FULL on every reload — it is saved under its own key now, apart from the records, so RESET RECORDS cannot wipe it, and read through a whitelist so a junk value cannot break the draw; and G.flourish was not run-scoped, so a flourish running as a run ended bled into the next run's opening frames. */
 /* v0.78c — THE TWO FLARE CARDS ARE RETIRED (his call): SCOUT FLARE and PARTING FLARE leave the reward pool, 35 cards to 33. Retired-but-recorded on the v0.75 pattern — the pool entry and the CARD_WHO row go, REW.scoutFlare / REW.dashFlare stay as keys reading false. THE EFFECT IS UNTOUCHED and dormant, his call, because more flare cards may come: CARD_LIGHTS, FLARE, dropFlare, playerMadeLightAt, the darkness holes, the spawn rule and the deeds' snuffing are all exactly as they were, and both effect sites still read their flag — a future card arms the whole machine by setting one boolean. */
 /* v0.78b — TWO BUGS OFF THE 09-06 DESERT RUN. (1) THE LIST STUCK ON HER: updateWhirlwind's ordinary release branch never cleared whirlWobble, so any release inside the wobble window left her leaning for the rest of the run — the release branch clears what it sets now, and p2Tilt will not lean her for a spin that is not running. (2) A MINI VEIN RE-DEALT ITS BOARD ON EVERY CLAIM (room 17: a 19-step board at 261.6 s, interrupted, a 17-step one at 295.0 s): pwLoadSide built a mini's panel unconditionally while every other vein sat behind `if(!room.panels)`. v0.76 §4 wrote that on purpose; his call is that a mini remembers like every other ore — and a board you can re-roll by walking away is an exploit, not a flavour. */
@@ -13832,7 +13844,7 @@ function telemetryObj(){
                            .reduce((a, e) => a + e.readSec, 0).toFixed(1),
       rewardStats: { ...RSTAT, auraDmg: +RSTAT.auraDmg.toFixed(1), ...epicStats84a() },   /* v0.84a §1: epicsTaken, epicAt [s], rarityTaken, epicsOffered */
       cards85: card85Sum(),   /* v0.85 §7: every card's own damage (the audit's ask) */
-      enemyStrikes: strikeSum85n(), interrupts: intrSum85n(), killsByRock85q: killsByRock85q(),   /* v0.85q §3: { wall, vein, roam } */   /* v0.85n §6: { hit, miss, empty }, { n, byKind, bySource } */
+      enemyStrikes: strikeSum85n(), interrupts: intrSum85n(), killsByRock85q: killsByRock85q(), sideTiers: sideTiers85r(),   /* v0.85r §6: the dealt triples, with the room ids */ wraithGated85r: TOF('wraith_gated').length,   /* v0.85r §3 */   /* v0.85q §3: { wall, vein, roam } */   /* v0.85n §6: { hit, miss, empty }, { n, byKind, bySource } */
       verbs: JSON.parse(JSON.stringify(VSTAT)),   // v0.39: uses/hits/dmg per weaponId:verb
       wallEmbeds: TOF('wall_embed').filter(e => e.type === 'wall_embed').length,   // the tripwire: should read 0 (v0.20: now a TRUE-circle test — v0.19 sampled bbox corners and counted wall-huggers)
       pathAssistSec: +((G.pathAssist || 0)).toFixed(1),   // v0.24: enemy-seconds spent field-steering (vs the straight dance)
@@ -13883,21 +13895,8 @@ function telemetryObj(){
       /* the ramp, answerable from the log now: mean solve seconds per rung, for
          the veins and for the event room's ladder, plus the mechanic count each
          board actually carried. */
-      sideRungSec: (() => {
-        const o = {};
-        for(const e of TELEM) if(e.type === 'side_solve' && e.rung != null)
-          (o[e.rung] = o[e.rung] || []).push(e.timeSec);
-        for(const k of Object.keys(o))
-          o[k] = { n: o[k].length, sec: o[k], mean: +(o[k].reduce((a,b)=>a+b,0)/o[k].length).toFixed(1) };
-        return o;
-      })(),
-      sideRungMech: (() => {
-        const o = {};
-        for(const e of TELEM) if(e.type === 'side_stage_start')
-          (o[e.rung] = o[e.rung] || []).push(e.panel.mech);
-        for(const k of Object.keys(o)) o[k] = [...new Set(o[k])];
-        return o;
-      })(),
+      sideRungSec: sideRungSec85r(),   /* v0.85r §6: keyed by the slot (1, 2, 3) and by the tier (t1 .. t5) */
+      sideRungMech: sideRungMech85r(),
       ladderSec: TOF('stage_solve').filter(e => e.type === 'stage_solve').map(e => e.timeSec),
       ladderMech: TOF('stage_start').filter(e => e.type === 'stage_start').map(e => e.panel.mech),
       degenerateBoards: TELEM.filter(e => (e.type === 'stage_start' || e.type === 'side_stage_start')
@@ -15698,6 +15697,7 @@ function boardOpen(){
    than getting a special case. */
 function pwLoadSide(room){
   placePanelForRoom(room.rect, room);
+  sideTiersEnsure85r(room);   /* v0.85r §6: a side room with no deal (a map the generator gave up on) is dealt here */
   planRoomReady85l(room);   /* v0.85l §1: the planner's boards; any missing one is made here, by the rules below */ // v0.15: the vein camera is fixed now, so the panel is parked like the hold's (v0.17: against the VEIN's own mouths)
   /* v0.35a: a room may carry its OWN ladder (the practice ore's level picker).
      A real vein has none and reads the level's, exactly as before. */
@@ -15718,7 +15718,7 @@ function pwLoadSide(room){
   }
   if(!room.panels){
     const rg = room.rungs;
-    room.panels = rg ? [0, 1, 2].map(i => { const sp = rg[Math.min(i, rg.length-1)]; return genPanelFromSpec(sp, !!sp.hard); })
+    room.panels = rg ? [0, 1, 2].map(i => { const sp = rg[Math.min(i, rg.length-1)]; return room.tiers ? sideGen85r(room, i) : genPanelFromSpec(sp, !!sp.hard); })
                      : [genSidePanel(0), genSidePanel(1), genSidePanel(2)];
   }
   PW.panel = room.panels[room.solved];
@@ -15733,7 +15733,7 @@ function pwLoadSide(room){
      run at all — it took a generator harness. The veins now log their board
      exactly the way the event room's ladder does. */
   PW.errN = 0; PW.clearN = 0;   // v0.23: per-board counters (a paused vein re-zeroes on resume, same as its clock)
-  tlog('side_stage_start', {room: room.idx, rung: room.solved + 1,
+  tlog('side_stage_start', {room: room.idx, rung: room.solved + 1, ...(room.tiers ? { tier: sideTier85r(room) } : {}),   /* v0.85r §6: the board's tier */
     hint: PW.panel.hint, ...lightSnap(),
     panel: panelSnap(PW.panel)});
   deepFire84o(deepKind84o(room));   /* v0.84o §10: a new board (a resumed one carries its mark) */
@@ -15745,7 +15745,7 @@ function sideSolved(room){
   const last = room.mini ? 1 : 3;   // v0.76: a MINI VEIN is one board — done at one, not at three (§4). Everything else about the solve is the vein's own
   const rung = room.solved + 1, sec = +PZ.stageT.toFixed(1), par = PZ.par;
   const xpPay = room.practice ? 0 : room.mini ? XP.mini[Math.min(room.tier || 1, XP.mini.length) - 1]   // v0.76 §5.2: a mini vein pays what its BOARD pays — the tier's own number
-                                    : sideXP(rung);   // v0.75: the rung's XP (§5) — the hall's ore never pays · v0.83b §2: the depths' ladder
+                                    : sideXP(room.tiers ? sideTier85r(room) : rung);   /* v0.85r §6: a dealt vein's board pays its tier */   // v0.75: the rung's XP (§5) — the hall's ore never pays · v0.83b §2: the depths' ladder
   room.solved++;
   PZ.stageT = 0; PW.errFlash = 0; PZ.solvedFlash = 1.2;
   // v0.15: the vein ramps, so the sound ramps — the hard third board earns the
@@ -15756,7 +15756,7 @@ function sideSolved(room){
      par — the three numbers we had to reconstruct by differencing timestamps. */
   const solveLine = {room: room.idx, n: room.solved, rung, timeSec: sec,
                       par, underPar: sec <= par, xp: xpPay,
-                      ...(room.mini ? {mini: true, on: room.on, tier: room.tier, band: room.band} : {}),
+                      ...(room.mini ? {mini: true, on: room.on, tier: room.tier, band: room.band} : {}), ...(room.tiers ? {tier: room.tiers[rung - 1]} : {}),   /* v0.85r §6 */
                       errs: PW.errN || 0, clears: PW.clearN || 0, ...lightSnap()};   // v0.23 · v0.75: + xp · v0.76: the mini vein's own line
   if(room.mini) tlog('mini_solve', solveLine); else tlog('side_solve', solveLine);   // v0.76: two literal call sites, so the studio can chip each
   shatter(room.relic[0], room.relic[1], xpPay, room.mini ? 'mini' : 'side', room);   /* v0.84 §3: + the room */   // v0.76 THE SHATTER: the rung's XP lands on the floor around the ore, before the branch — nothing pours into the bar
@@ -15776,7 +15776,7 @@ function sideSolved(room){
     /* v0.18: the fixed shields-for-both is now ONE CARD IN THE HAND — a spent
        vein deals pick-one-of-three off the 3D pool and time stops for the read */
     const clearLine = {room: room.idx, reward: 'xp',   // v0.75: the vein deals no hand — each rung paid its XP above; the bar deals
-      ...(room.mini ? {mini: true, on: room.on, tier: room.tier, band: room.band, elite: deedsActive()} : {}),   // v0.76
+      ...(room.mini ? {mini: true, on: room.on, tier: room.tier, band: room.band, elite: deedsActive()} : {}), ...(room.tiers ? {tier: room.tiers[room.tiers.length - 1], tiers: room.tiers.slice()} : {}),   /* v0.85r §6 */   // v0.76
       activeSec: +(room.activeSec || 0).toFixed(1), waves: room.waveN || 0,
       pauses: room.pauseN || 0, ...lightSnap()};
     if(room.mini) tlog('mini_clear', clearLine); else tlog('side_room_clear', clearLine);   // v0.76
@@ -17813,11 +17813,11 @@ const XP = {
   level: 325,                 // v0.76 (§5.3 A, then his tier call of 09-05): 250 → 275 for the fourteen extra paydays, and 275 → 325 once a mini vein's board stopped always being a rung 1. At 325 the eight replayed runs come out hand for hand identical to the flat-20 build — the tier variety is free. A flat threshold still; the surplus carries over
   orb:  { small: 2, medium: 10, large: 50 },   /* v0.84o §3: three orbs (YOURS) — was mote 1 / shard 4 / crystal 10 / named 40, gilt x2 */
   side: [20, 35, 60],         // v0.76 (§5.3 A): 30/50/80 → 20/35/60 — a side vein 160 → 115. The vein's shape is kept: its third rung still pays most, its elite is still the same payday
-  mini: [20, 35, 60, 90, 130],// v0.76 — his call of 2026-09-05, during the build: a MINI VEIN's board is rolled across the level's FIRST FIVE TIERS, so it pays by the tier it dealt (§5.2's principle — it pays what that board pays). Tiers 1-3 are the side vein's own rungs; 4 and 5 are ONE MORE boards, and paid like them
+  mini: [20, 35, 60, 90, 130],// v0.76 — his call of 2026-09-05, during the build: a MINI VEIN's board is rolled across the level's FIRST FIVE TIERS, so it pays by the tier it dealt (§5.2's principle — it pays what that board pays). Tiers 1-3 are the level's three rungs; 4 and 5 are ONE MORE boards, and paid like them · v0.85r §6: a SIDE VEIN deals its three boards from these five tiers too (three draws, sorted; every level) and each board pays its tier — this table off the depths, XP.side83 (x2) in them
   main: [60, 100, 160],       // the main ore's ladder, stages 1 / 2 / 3
   /* v0.83b §2 — THE SIDE VEINS PAY MORE IN THE DEPTHS (YOURS: buff them — an ore-back now pays 40 / 70 / 120; MINE: x2, so a side board pays what the same-rung
      ore-back does and a whole vein, 230, out-pays any single ore-back or mini; the Motherlode's boards read it too) */
-  side83: [40, 70, 120],
+  side83: [40, 70, 120, 180, 260],   /* v0.85r §6: five tiers (XP.mini x2), a side vein's board pays its dealt tier: a vein 120 (1-1-1) to 780 (5-5-5) */
   oneMore: 160,               // every greed board (stage >= 4)
   step: 25                    /* v0.83p §3: THE BAR RISES (his pick) — hand n+1 costs level + step*n: 325, 350, 375 ... */
 };
@@ -18586,6 +18586,7 @@ function updateEnemies83(dt0){
         TEL.dollFreeSec += dt;
       }
     }
+    if(e.rootT > 0) rootTick85r(e, dt);   /* v0.85r §2: THE ROOT's clock, beside the stun's (a stun covers it) */
     if(e.stun > 0){
       e.stun -= dt;
       /* v0.13: a stagger BREAKS a windup, it doesn't pause it. Resuming a
@@ -18712,6 +18713,7 @@ function updateEnemies83(dt0){
     /* v0.35 — the snare's slow: nearly rooted at cast (floor), back to full
        speed as slowT runs out. Linear; applies to everything that moves. */
     if(e.slowT > 0) spdMult *= SNARE_SLOW.floor + (1 - SNARE_SLOW.floor) * (1 - e.slowT/SNARE_SLOW.t);
+    if(e.rootT > 0) spdMult = 0;   /* v0.85r §2: a rooted body does not move (it still turns, winds up and strikes) */
     /* v0.49 — HOARFROST LIGHT (his idea, his words: "an icy light that puts
        a slow effect on enemies inside the light"): inside her light the
        horde wades. The lamp is terrain now. */
@@ -19016,7 +19018,9 @@ function rockStrikesToShell(e){ return e.kind === 'mother' ? V83.MOTH.strikes : 
 /* the guard every enemy-damage site asks before it takes hp: true = skip the hp change (and so the kill). The site's own
    stun, shove and hurtT still happen. A Dripper still dripping in from the roof (e.born, §3) is untouchable too. */
 /* v0.83b §2: a side board's pay — the depths' own ladder there, the old one everywhere else */
-function sideXP(rung){ return (LVL.id === 'depths' ? XP.side83 : XP.side)[Math.min(rung, 3) - 1]; }
+/* v0.85r §6 (YOURS: harder side veins pay more): the board's TIER (1..5; a rung 1..3 is its own tier — the Motherlode's boards), unclamped to 3 —
+   XP.side83 in the depths (the x2 kept), the minis' XP.mini elsewhere (its tiers 1-3 are XP.side's numbers) */
+function sideXP(tier){ const T = LVL.id === 'depths' ? XP.side83 : XP.mini; return T[Math.max(1, Math.min(tier | 0 || 1, T.length)) - 1]; }
 function oreAbsorb(e, src){
   if(e.born > 0) return true;
   if(!isRock(e)) return false;
@@ -20416,7 +20420,7 @@ function startHold(){
    board and the solved count are kept, the hold's clocks are cleared so nothing fires in the escort from stale state,
    and the escort takes over next tick — side veins, mini veins, wells and the roaming camera, all back. In the ESCAPE
    there is no escort to go back to: the same hold-RB just closes the board (she can run, or RB to resume). */
-function leaveHold(why){
+function leaveHold(why, by){   /* v0.85r §1: `by` ('b') rides the hold_leave line */
   const holdSec = +G.phaseT.toFixed(1);
   if(PW.panel && PW.path.length > 1) PW.path = [[0, PW.panel.ch]];
   PW.lockT = 0; PZ.msg = ''; PZ.msgT = 0;
@@ -20426,7 +20430,7 @@ function leaveHold(why){
   if(pastMain84()){   /* v0.84 §5: the greed stays the greed */
     G.holdClosed = !G.choiceOpen;
     P2.bodyMode = !P2.downed;
-    tlog('hold_leave', {why, phase: G.state, stageIdx: G.stageIdx, greedExtra: G.greedExtra, holdSec});
+    tlog('hold_leave', {why, ...(by ? {by} : {}), phase: G.state, stageIdx: G.stageIdx, greedExtra: G.greedExtra, holdSec});
     SFX.ui();
     return;
   }
@@ -20434,7 +20438,7 @@ function leaveHold(why){
   G.holdWarn = null; G.trickleT = null; G.holdWraithT = null;
   G.state = 'escort'; G.phaseT = 0;
   P2.bodyMode = !P2.downed;
-  tlog('hold_leave', {why, phase: 'hold', stageIdx: G.stageIdx, holdSec});
+  tlog('hold_leave', {why, ...(by ? {by} : {}), phase: 'hold', stageIdx: G.stageIdx, holdSec});
   tlog('phase', {to:'escort', from:'hold', stageIdx: G.stageIdx, ...lightSnap()});
   G.camSnap = true;
   SFX.ui();
@@ -20509,7 +20513,7 @@ function endRun(won, reason){
        1750 keeps the old ratio of ceiling to median run (1200/727 = 1.65; 1062 x 1.65 = 1752), so the row is
        worth ~8% of a good score again. It still floors at zero: outstay 29:10 and there is no bonus. */
     const timeBonus = Math.max(0, Math.round((1750 - G.t) * 2));
-    b = { ore: G.ore * 1000, sideVeins: (G.sideOre || 0) * 600, miniVeins: (G.miniOre || 0) * 100, timeBonus,   // v0.76 §9.1: a seventh row
+    b = { ore: G.ore * 1000, sideVeins: sideVeinsScore85r(),   /* v0.85r §6 (YOURS: score by the difficulty): 70 x the tiers' sum of each cleared vein (was x 600) */ miniVeins: (G.miniOre || 0) * 100, timeBonus,   // v0.76 §9.1: a seventh row
       noHitHold: G.noHitHold ? 750 : 0,
       fullClear: G.stageIdx >= totalStages() && roomsDone() && (G.miniOre || 0) >= miniCount84m() ? 1500 : 0,   /* v0.84m §8 */   // v0.70a: and every special room cleared (his call — the 09-01 run paid 1500 with the shell pit unbeaten) · v0.76: and every mini vein
       dust: (G.dust || 0) * 300 };   // v0.75: USELESS DUST, so the score is honest about where it came from
@@ -22668,7 +22672,7 @@ function orePick83(){
   let best = cands[0];
   for(const c of cands) if(c[1] < best[1] - 1e-6) best = c;
   ORE83P.pick = best[0]; ORE83P.d = best[1]; ORE83P.n = cands.length;
-  if(cands.length > 1 && vin.edge('claim')){
+  if(cands.length > 1 && vin.edge('claim') && !relocked85r()){   /* v0.85r §1: a refused press logs nothing */
     const kind = r => r === 'main' ? 'main' : r.rock ? r.rock.kind : r.mini ? 'mini' : 'side';
     const other = cands.filter(c => c !== best).reduce((a, c) => c[1] < a[1] ? c : a);
     tlog('ore_pick', { chosen: kind(best[0]), d: Math.round(best[1]), n: cands.length, next: kind(other[0]), nextD: Math.round(other[1]), phase: G.state });
@@ -22956,17 +22960,10 @@ function updatePlayers83(dt){
           e.snareT = Math.max(e.snareT || 0, SNARE_SLOW.t);   // the drawing's clock (snared reads differently from staggered)
           e.snareOx = e.x; e.snareOy = e.y;
           shBody84q(e);   /* v0.84q §4 */
-          if(REW.pinSnare){
-            // PINNING SNARE: the old full stop. A stun breaks a windup by the
-            // v0.13 rule; the wraith's dive machine needs its own cancel.
-            e.stun = Math.max(e.stun, SNARE_HOLD);
-            if(e.atkPhase === 'windup'){ intr85n(e, 'windup', e.atkT, 'snare'); e.atkPhase = 'idle'; e.atkT = 0; tlog('slam_cancelled', {by: 'snare'}); }   /* v0.85n §6 */
-            if(e.wr && (e.wr.phase === 'dive' || e.wr.phase === 'windup')){
-              intr85n(e, e.wr.phase === 'windup' ? 'dive_windup' : 'dive', e.wr.t, 'snare'); e.wr.res85n = null;   /* v0.85n §6 */
-              e.wr.phase = 'circle'; e.wr.t = ATK.wraith.circle;
-              tlog('dive_cancelled', {by: 'snare'});
-            }
-          }
+          /* v0.85r §2: PINNING SNARE roots (no stun, nothing breaks); BASH stuns 1.2 s and breaks wind-ups and dives (the old PIN lines,
+             credited 'bash'). Both held: the stun covers the root. */
+          if(REW.pinSnare) pinRoot85r(e);
+          if(REW.bash85r) bashHit85r(e);
           if(REW.snareTaunt) e.taunt = 3.5;
         } else if(REW.snareTaunt && d < Math.max(SNARE_TAUNT_R, SR)){ e.taunt = 3.5; called++; }   // ROARING SNARE: distant foes turn on HIM
       }
@@ -23841,8 +23838,8 @@ function updateVein(room, dt, spawnWaves){
   if(room.done) return;
   const distOre = Math.hypot(vp.x-room.relic[0], vp.y-room.relic[1]);
   room.prompt = !room.active && distOre < 85 && !vp.downed && !P1.downed && oreOK83(room);   /* v0.83r §1: only the nearest */   // v0.77: recomputed only here — startHold clears it, so none lingers into the hold
-  if(room.prompt && vin.edge('claim') && !activeSideRoom()){   // v0.35: RB starts an ore puzzle (A and X belong to her dash and pickaxe now)   // v0.76: never two boards at once — a mini vein does not take the panel from a vein, or the other way round
-    room.active = true; room.holdArm = false;    // starting press must be RELEASED before hold-to-leave counts
+  if(room.prompt && vin.edge('claim') && !activeSideRoom() && !relocked85r()){   /* v0.85r §1: refused (silently) for VEIN_RELOCK s after a leave */   // v0.35: RB starts an ore puzzle (A and X belong to her dash and pickaxe now)   // v0.76: never two boards at once — a mini vein does not take the panel from a vein, or the other way round
+    room.active = true; room.holdArm = false; room.bEmpty85r = 0;    // starting press must be RELEASED before RB held counts (v0.85r §1: the reroll now) · the B guard starts at 0
     if(!room.mini) wardFromOre(room, 'vein ' + room.idx);   // v0.61: LINE WARD — a charge the first time this ore wakes (v0.76: a mini vein has no room to ward)
     // v0.8 fix: the wave timer used to start at ZERO — a pack spawned the
     // instant she touched the vein, sometimes at the door right beside the
@@ -23875,20 +23872,23 @@ function updateVein(room, dt, spawnWaves){
     if(room.mini) tlog('mini_interrupt', intLine); else tlog('side_room_interrupt', intLine);   // v0.76: two literal call sites, so the studio can chip each
   }
   if(room.active){
-    if(!vin.held('claim')) room.holdArm = true;
-    // she can STEP AWAY anytime: hold RB ~0.6s to let go of the vein
-    if(room.holdArm && vin.held('claim')){
-      room.leaveHold = (room.leaveHold || 0) + dt;
-      if(room.leaveHold >= VEIN_LEAVE_T){   // v0.77: the shared number
-        room.active = false; room.leaveHold = 0;
-        PZ.msg = ''; PZ.msgT = 0;
-        // v0.58 audit §2: no banner — the ore's own "RB — resume" prompt says it
-        room.pauseN = (room.pauseN || 0) + 1;
-        const pauseLine = {room: room.idx, solved: room.solved, ...(room.mini ? {mini: true, on: room.on} : {}), ...lightSnap()};
-        if(room.mini) tlog('mini_pause', pauseLine); else tlog('side_room_pause', pauseLine);   // v0.76
-        return;
-      }
-    } else room.leaveHold = 0;
+    if(!vin.held('claim')) room.holdArm = true;   // v0.85r §1: the entering press let go — RB held is the reroll from here (below)
+    /* v0.85r §1 — B IS BACK (YOURS): she steps away with B on an EMPTY line — the old RB-hold leave's lines, word for word —
+       once the line has been empty VEIN_B_GUARD s (since the last clear, or since it became empty), so a B pressed hard after
+       a clear or an undo-spam cannot overshoot into a leave; a guarded press does nothing and logs nothing. A B with a line is
+       the clear (below). RB held never leaves now. The stand-in (a bot seat) holds B to step away (botLeaveBoard84g). */
+    room.leaveHold = 0;
+    room.bEmpty85r = PW.path && PW.path.length > 1 ? 0 : (room.bEmpty85r || 0) + dt;
+    if(bot84Seat(vin === P1IN ? 0 : 1) ? vin.held('b') : (vin.edge('b') && !(PW.path && PW.path.length > 1) && room.bEmpty85r >= VEIN_B_GUARD)){
+      room.active = false; room.leaveHold = 0;
+      PZ.msg = ''; PZ.msgT = 0;
+      // v0.58 audit §2: no banner — the ore's own "RB — resume" prompt says it
+      room.pauseN = (room.pauseN || 0) + 1;
+      const pauseLine = {room: room.idx, solved: room.solved, ...(room.mini ? {mini: true, on: room.on} : {}), ...lightSnap(), by: 'b'};
+      if(room.mini) tlog('mini_pause', pauseLine); else tlog('side_room_pause', pauseLine);   // v0.76
+      relockSet85r();   /* v0.85r §1: VEIN_RELOCK */
+      return;
+    }
     room.activeSec = (room.activeSec || 0) + dt;
     room.waveT -= dt;
     /* v0.52 — VEIN WAVES RETIRE ON THE DEPTHS (his report: "during ore
@@ -23926,7 +23926,7 @@ function updateVein(room, dt, spawnWaves){
     if(PW.lockT > 0){ PZ.repeat.dir = null; lfIdle85f(); rerollTick83(dt, false); return; }   // the hit's lockout applies at veins too · v0.83f §1: and lets a reroll hold go
     if(bot84Seat(vin === P1IN ? 0 : 1)){ botSolveStep84(dt); return; }   /* v0.84a §6: a bot's board is the stand-in solver */
     stick85f(dt, vin.cur, vin === P1IN ? 0 : 1);   /* v0.85f §1: TAP AND GLIDE */
-    rerollTick83(dt, vin.held('b'));   // v0.83f §1: B held — a new board
+    rerollTick83(dt, room.holdArm && vin.held('claim'));   // v0.83f §1: a new board · v0.85r §1 (YOURS): RB held, not B (armed once the entering press is let go)
     if(vin.edge('b') && PW.path.length > 1){
       /* v0.23 — her clear is data now. The clear itself has existed since the
          panels shipped (her B / the "," key) — but it was labelled with the
@@ -24023,7 +24023,7 @@ function updateEscort(dt){
   const bothIn = inChamber(P1.x, P1.y) && inChamber(P2.x, P2.y) && !P1.downed && !P2.downed && !activeSideRoom();
   // v0.58 audit §2: THE VEIN SLEEPS banner is gone — the ore's own prompt teaches it
   G.mainPrompt = bothIn && Math.hypot(P2.x-relicT[0], P2.y-relicT[1]) < ORE_WORK_R && oreOK83('main');   /* v0.83r §1 */   // v0.67: one number with the hold's work/resume range
-  if(G.mainPrompt && P2IN.edge('claim')) startHold();   // v0.35: RB · v0.77: a re-entry too — startHold knows
+  if(G.mainPrompt && P2IN.edge('claim') && !relocked85r()) startHold();   /* v0.85r §1: VEIN_RELOCK */   // v0.35: RB · v0.77: a re-entry too — startHold knows
 }
 /* v0.77 — THE OPEN HOLD: the ore's engagement and the board's input, lifted out of updateHold so the escape can
    run the same board (the bank-or-dig overlay, the ONE MORE boards) with the same grammar. */
@@ -24037,7 +24037,7 @@ function updateOreEngagement(dt){
     tlog('hold_interrupt', {t: +G.t.toFixed(1)});
   }
   G.holdPrompt = !G.holdEngaged && !G.choiceOpen && oreDist < ORE_WORK_R && !P1.downed && !P2.downed && oreOK83('main');   /* v0.83r §1 */
-  if(G.holdPrompt && P2IN.edge('claim')){
+  if(G.holdPrompt && P2IN.edge('claim') && !relocked85r()){   /* v0.85r §1: VEIN_RELOCK */
     if(pastMain84() && G.boardSolved){ pickOneMore(); return; }   /* v0.84 §5: in the greed too */   // v0.77: a spent ore in the escape — RB IS the pick (the overlay was closed with RUN FOR IT, and she came back)
     G.holdEngaged = true; G.holdPrompt = false; G.holdArm = false; G.holdLeave = 0;
     /* v0.84 §5: a side, mini or rock board took the panel since (its place and its board) — the main board comes back */
@@ -24048,14 +24048,17 @@ function updateOreEngagement(dt){
      for word: the press that started or resumed it must be released first), or with the board closed after an
      interrupt (out of range, or once the resume press is released). Not while the bank-or-dig overlay is up, and not
      while she is down. */
-  if(!P2IN.held('claim')) G.holdArm = true;
-  if(G.holdArm && P2IN.held('claim') && !G.choiceOpen && !P2.downed && (G.holdEngaged || G.state === 'hold')){   // in the escape only a live board is left this way
-    G.holdLeave = (G.holdLeave || 0) + dt;
-    if(G.holdLeave >= VEIN_LEAVE_T){
-      leaveHold(G.holdEngaged ? 'step_away' : 'after_interrupt');
+  if(!P2IN.held('claim')) G.holdArm = true;   // v0.85r §1: the press that started or resumed it let go — RB held is the reroll (updateBoardInput)
+  /* v0.85r §1 — B IS BACK (YOURS): at the main ore's live board, B on an empty line (empty VEIN_B_GUARD s) steps away through
+     leaveHold('step_away'), as the RB hold did. RB held never leaves now; the hold-RB after an interrupt (why after_interrupt)
+     is gone with it (MINE: walk back, RB, then B). Not under the overlay, not while she is down. */
+  G.holdLeave = 0;
+  { const line85r = !!(PW.panel && PW.path && PW.path.length > 1);
+    G.bEmpty85r = G.holdEngaged && !line85r ? (G.bEmpty85r || 0) + dt : 0;
+    if(G.holdEngaged && !G.choiceOpen && !P2.downed && !line85r && P2IN.edge('b') && G.bEmpty85r >= VEIN_B_GUARD){
+      leaveHold('step_away', 'b'); relockSet85r();
       return;
-    }
-  } else G.holdLeave = 0;
+    } }
   const working = G.holdEngaged && !P1.downed && !P2.downed;
   G.holdWorking = working;
   G.holdClosed = !working && !G.choiceOpen;
@@ -24110,7 +24113,7 @@ function updateBoardInput(dt){
     // grid movement with key-repeat
     if(bot84Seat(1)){ if(!activeSideRoom()) botSolveStep84(dt); return; }   /* v0.84a §6: the main board, a bot's */
     stick85f(dt, P2IN.cur, 1);   /* v0.85f §1: TAP AND GLIDE */
-    rerollTick83(dt, P2IN.held('b') && !PW.lockT);   // v0.83f §1: B held — a new board
+    rerollTick83(dt, G.holdArm && P2IN.held('claim') && !PW.lockT);   // v0.83f §1: a new board · v0.85r §1 (YOURS): RB held, not B (armed once the press that opened it is let go)
     if(P2IN.edge('b') && PW.path.length > 1){
       const ln = PW.path.length;                    // v0.23: logged (see the vein site)
       PW.path = [[0, PW.panel.ch]]; SFX85F.lfUndo();   /* v0.85f §3 */
@@ -25252,18 +25255,9 @@ function drawDarkness(){
       const pts = b.trail; if(pts.length < 2) continue;
       /* v0.84 §6: one pass outside 'full' (ribbon84) */
       /* v0.84k §4: the ribbon is DIM light — each layer's alpha scaled so the centre lifts DIM_RING.lift of the dark (RIBBON84K) */
-      if(FX84.level !== 'full'){ const q = FX84.ribbon[FX84.level]; ribbon84(b, [q[0], q[1]*DIM_RING.lift]); continue; }
-      for(const [k, al0] of [[1.0, 0.35], [0.8, 0.45], [0.58, 1.0]]){ const al = al0*RIBBON84K;
-        lctx.lineWidth = 2*BEAM.trailHole*camS*LSCALE*k;
-        for(let i = 1; i < pts.length; i++){
-          const age = G.t - (pts[i].t0 + pts[i-1].t0)/2;
-          const a = age > BEAM.lightLife - BEAM.lightDim ? al*Math.max(0, (BEAM.lightLife - age)/BEAM.lightDim) : al;
-          if(a <= 0.01) continue;
-          const [ax0, ay0] = w2s(pts[i-1].x, pts[i-1].y), [bx0, by0] = w2s(pts[i].x, pts[i].y);
-          lctx.strokeStyle = 'rgba(0,0,0,' + a.toFixed(3) + ')';
-          lctx.beginPath(); lctx.moveTo(ax0*LSCALE, ay0*LSCALE); lctx.lineTo(bx0*LSCALE, by0*LSCALE); lctx.stroke(); FX84.stats.ribbonSegs++;
-        }
-      }
+      /* v0.85r §5 (YOURS): ribbon84's one pass at EVERY tier; at 'full' it takes the light tier's [width, alpha] (MINE) — the three-pass ribbon is gone */
+      { const q = FX84.ribbon[FX84.level === 'full' ? 'light' : FX84.level]; ribbon84(b, [q[0], q[1]*DIM_RING.lift]); }
+      /* v0.85r §5: (the v0.66 three layered passes, one stroke per segment, were here) */
     }
   }
   /* v0.68c — THE GREED DEEDS on the dark: the eclipse's disc is painted back over every hole it covers
@@ -25407,11 +25401,15 @@ function drawOreCrystal(sx, sy, s, left, greed, main, idx, opts){
      the small gems always; it never goes spent and the greed crystal is retired */
   if(kind === 'main'){ const n = G.stageIdx || 0; o.stage = Math.min(5, n); stage = 0; o.greed = 0; o.chips = 'main5'; o.tiers = [1, 2, 3, 4, 5]; o.lit = [0, 1, 2, 3, 4].map(i => i >= n); }
   if(kind === 'mini' && opts && opts.tier) o.gem = opts.tier;   /* v0.84h §3: a mini ore wears its board's tier */
-  if(kind === 'side'){ o.tiers = [1, 2, 3]; const n = 3 - Math.max(0, Math.min(3, left)); if(n > 0 && n < 3) o.lit = [n < 1, n < 2, n < 3]; }   /* v0.84h §3: boards 1, 2, 3; a solved one goes dark */
+  if(kind === 'side'){ const T85r = opts && Array.isArray(opts.tiers) && opts.tiers.length === 3 ? opts.tiers.map(t => Math.max(1, Math.min(5, t | 0))) : null;
+    o.tiers = T85r || [1, 2, 3]; const n = 3 - Math.max(0, Math.min(3, left)); if(n > 0 && n < 3) o.lit = [n < 1, n < 2, n < 3];   /* v0.84h §3: boards 1, 2, 3; a solved one goes dark */
+    /* v0.85r §6: the vein's own tiers (room.tiers, the minis' marks: 1 diamond … 5 brilliant; [1, 2, 3] without them); a side vein in a run
+       (opts.side85r — not the practice ore) is bitten by side85r, which takes mark k with bite k, and spent it is the stump: no marks */
+    if(opts && opts.side85r){ o.side85r = 1; o.chips = 'side85r'; if(stage >= 3){ o.sil = 'Bs'; o.chips = 'stump85r'; delete o.tiers; delete o.lit; } } }
   if(!NSPR[JSON.stringify(o)]){ const ks = Object.keys(NSPR); if(ks.length >= NSPR_CAP) for(const k of ks) delete NSPR[k]; }
   let alpha = 1;
   if(kind !== 'mini' && opts && opts.at){
-    const b = nBox(NSIL[sil].pts), Sw = S/camS;
+    const b = nBox(NSIL[o.sil].pts), Sw = S/camS;   /* v0.85r §6: the rock drawn — a spent side vein's stump is 0.45 units tall, not rock B's 1.27 */
     const hw = Math.max(-b.x0, b.x1)*Sw, tall = -b.y0*Sw, fy = opts.at[1] + ORE_FOOT_K*s/camS;
     if(behindVein(opts.at[0], fy, hw, tall)){   /* v0.84f §3: solid; the hidden come back over it (was alpha VEIN_ALPHA / ROCK_ALPHA) */
       const pw = Math.max(-b.x0, b.x1)*S + 30, fS = sy + ORE_FOOT_K*s, ph = -b.y0*S + 30;
@@ -26392,7 +26390,7 @@ function drawWorld(){
         if(G.holdPrompt && Math.sin(G.t*5) > -0.3){
           ctx.fillStyle = '#5af0ff'; ctx.font = `bold ${Math.round(12*camS)}px monospace`; ctx.textAlign = 'center';
           /* v0.77: in the escape, a spent ore offers the extra (RB IS the pick); in the hold, the resume — and the way out */
-          ctx.fillText(pastMain84() && G.boardSolved ? 'RB — one more vein' : G.state === 'hold' ? 'RB — resume · hold RB — step away' : 'RB — resume', sx, sy + 52*camS);
+          ctx.fillText(pastMain84() && G.boardSolved ? 'RB — one more vein' : G.state === 'hold' ? 'RB — resume · then B — step away' : 'RB — resume', sx, sy + 52*camS);
         }
       } else {
         // harvest beam to her
@@ -26434,7 +26432,7 @@ function drawWorld(){
     /* v0.84j §2 (his): the hum — the slow amber ring out of an unmined side vein — is gone; the vein's own light (drawDarkness) still shows it */
     ctx.save();
     // v0.60 — the chiseled crystal, side size; its silhouette IS the progress (the pips are gone)
-    yq(room.relic[1] + 9, () => drawOreCrystal(sx, sy, 16*camS, room.done ? 0 : Math.max(0, 3 - (room.solved || 0)), 0, false, room.idx, { kind: 'side', at: room.relic }), 'ore', room.relic[0]);   // v0.80
+    yq(room.relic[1] + 9, () => drawOreCrystal(sx, sy, 16*camS, room.done ? 0 : Math.max(0, 3 - (room.solved || 0)), 0, false, room.idx, { kind: 'side', at: room.relic, tiers: room.tiers, side85r: !room.practice }), 'ore', room.relic[0]);   // v0.80
     if(!room.done){
       // v0.6: the mystery circle is gone — the ore itself is the interaction,
       // and it says so when she's close enough
@@ -28438,7 +28436,7 @@ function drawSnareHold(sx, sy, e, rad){
      card's full stop holds a body, violet stakes stand slammed in around it
      with a taut ring between them and cracked-ground marks — a statue, not a
      slowed walker. The baseline keeps the four soft arcs. */
-  if(REW.pinSnare && e.stun > 0){
+  if(e.rootT > 0){   /* v0.85r §2: THE ROOT wears the stakes (PIN roots now; was REW.pinSnare && e.stun > 0) */
     ctx.strokeStyle = '#c08cff'; ctx.shadowColor = '#c08cff'; ctx.shadowBlur = 12;
     ctx.lineWidth = 3; ctx.lineCap = 'round';
     for(let k = 0; k < 4; k++){
@@ -29223,15 +29221,15 @@ function drawCardFx(){
   for(const b of beams){
     const nx = -b.dy, ny = b.dx;
     const cres = (x, y, hgt, lw, col, alpha) => {
-      ctx.globalAlpha = alpha; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.shadowColor = '#ffd080'; ctx.shadowBlur = 14;
+      ctx.globalAlpha = alpha; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.shadowBlur = 0;   /* v0.85r §5 (YOURS): no blur at any tier — the light tier's head (its clamp stored 0) */
       const [sx, sy] = w2s(x, y);
       const ax = sx - (b.dx*6 + nx*hgt)*camS, ay = sy - (b.dy*6 + ny*hgt)*camS, bx = sx - (b.dx*6 - nx*hgt)*camS, by = sy - (b.dy*6 - ny*hgt)*camS;
       const cx = sx + b.dx*8*camS, cy = sy + b.dy*8*camS;
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.quadraticCurveTo(cx, cy, bx, by); ctx.stroke();
     };
     /* v0.84 §6: at 'light' / 'min' the trail is one stroked path of every third crescent (beamTrail84), not a blurred stroke per point */
-    if(FX84.level !== 'full') beamTrail84(b);
-    else for(const q of b.trail){ const a = 1 - (G.t - q.t0)/BEAM.trailLife; if(a <= 0) continue; cres(q.x, q.y, 14*a, 2.5*a*camS, 'rgba(255,220,150,1)', a*0.5); FX84.stats.beamPts++; }   // v0.66: the trail outlives the picture; draw only the 1 s
+    /* v0.85r §5 (YOURS: "approving the one-line win"): beamTrail84 at EVERY tier, 'full' included — the blurred stroke per crescent is gone (94 % of v0.85q's dropped frames) */
+    ctx.shadowBlur = 0; beamTrail84(b);   /* no blur left standing from an earlier draw (the clamp's guarantee outside 'full') */
     if(!b.dead){ const fl = b.flashT > 0 ? 1.5 : 1; cres(b.x, b.y, 16, 5*fl*camS, '#ffe9b0', 1); cres(b.x + b.dx, b.y + b.dy, 12, 2*camS, '#fff', 1); }
   }
   ctx.globalAlpha = 1; ctx.shadowBlur = 0;
@@ -30312,11 +30310,11 @@ function drawPuzzlePanel(){
   const sideF = atVein();
   /* v0.77 — THE OPEN HOLD: every board can be left now — the main ore's reads the side vein's footer, word for word
      (hold RB at any ore to step away). The choice overlay covers the footer when it is up. */
-  const holdP = sideF ? (sideF.leaveHold || 0) : (G.holdEngaged ? (G.holdLeave || 0) : 0);
+  /* v0.85r §1: no 'letting go…' any more — nothing is left by a hold */
   /* v0.23: the clear finally names her PAD button — the old caption said ","
      (keyboard only), and she plays on a pad: the mechanic existed for ten
      versions without her knowing. */
-  ctx.fillText(holdP > 0 ? 'letting go' + '.'.repeat(1 + Math.floor(holdP*5)) : 'B clear · hold B reroll · hold RB step away', x+10, y+h-10);   // v0.83f §1
+  ctx.fillText(VEIN_CAPTION85R, x+10, y+h-10);   // v0.83f §1 · v0.85r §1 (YOURS): 'B clear · B again leave · hold RB new board'
   drawReroll83(x + w - 18, y + 38);   // v0.83f §1: the reroll dial, under the par clock   // v0.58 audit §2: shortened, not faded
   lfOver85f(); temperFx85k();   /* v0.85k §13: the orb's burst / its fade */   /* v0.85f §2: the solve's fading picture, the chips */
   drawChoiceOverlay(x, y, w, h);
@@ -31355,7 +31353,7 @@ function drawMinimap(){
       if(!left){ ctx.strokeStyle = '#3a7a55'; ctx.lineWidth = 1.2; mmCrystal(cx2, cy2, 0, 3, 0); return; }
       ctx.strokeStyle = '#ffb060'; ctx.fillStyle = 'rgba(255,176,96,.25)'; ctx.lineWidth = 1.2;
       ctx.shadowColor = '#ffb060'; ctx.shadowBlur = Math.sin(G.t*4) > 0 ? 6 : 0;
-      mmCrystal(cx2, cy2, left, 3, 0); ctx.shadowBlur = 0;
+      mmCrystal85r(cx2, cy2, left, 3, room.tiers, room.solved); ctx.shadowBlur = 0;   /* v0.85r §6 (MINE): each standing spike as tall as its board's tier */
     });
   }
   /* v0.76 (§9.2) — THE MINI VEIN PIP. A mini vein is NOT a POI: no 25-tile hearing, no banner, not on the compass —
@@ -31543,9 +31541,8 @@ function drawBar(){
   if(!puzzleLive) drawBarArt(bx + (BAR_W - PANEL.w)/2, 348, PANEL.w, PANEL.h);
   /* v0.77 — THE OPEN HOLD: with the main ore's board closed under her (an interrupt), the slot says how to leave */
   if(!puzzleLive && G.state === 'hold' && !P2.downed && !PRIZE84.open){   /* v0.84 §5: not under the prize */
-    const holdP = G.holdLeave || 0;
-    ctx.fillStyle = holdP > 0 ? '#ffd05a' : '#8a90b8'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
-    ctx.fillText(holdP > 0 ? 'letting go' + '.'.repeat(1 + Math.floor(holdP*5)) : 'RB — resume · hold RB — step away', bx + BAR_W/2, 348 + PANEL.h - 10);
+    ctx.fillStyle = '#8a90b8'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('RB — resume · then B — step away', bx + BAR_W/2, 348 + PANEL.h - 10);   /* v0.85r §1: B on an empty line leaves; no hold */
   }
   /* v0.58 — THE INTERRUPT's mark: a red X over the puzzle slot, flashing as
      the panel closes under her (knocked off the ore / someone down) */
@@ -32969,7 +32966,7 @@ function drawEnd(o){
     if(G.breakdown && rowsN > 0){
       const rows = [
         ['ore banked  ×' + G.ore, G.breakdown.ore],
-        ['side veins  ×' + (G.sideOre || 0), G.breakdown.sideVeins],
+        [sideVeinsLabel85r(), G.breakdown.sideVeins],   /* v0.85r §6 */
         ['mini veins  ×' + (G.miniOre || 0), G.breakdown.miniVeins || 0],   // v0.76 §9.1
         ['time bonus', G.breakdown.timeBonus],
         ['no-hit hold', G.breakdown.noHitHold],
@@ -33323,8 +33320,8 @@ function drawPauseMenu(){
   if(PMENU.view === 'controls'){
     const rows = [
       ['#5af0ff', 'P1 · FIGHTER',   'WASD move · F swing · J dagger · G dash · H snare · K use · R revive'],
-      ['#ffc878', 'P2 · HARVESTER', 'arrows move · . pickaxe · , dash / undo · / channel · ; use · M revive'],
-      ['#8a90b8', 'GAMEPAD',        'stick move · X swing / pickaxe · Y dagger / channel · A dash · B snare / undo · RB use · LB revive'],
+      ['#ffc878', 'P2 · HARVESTER', 'arrows move · . pickaxe · , dash / clear / leave · / channel · ; use / new board · M revive'],   /* v0.85r §1 */
+      ['#8a90b8', 'GAMEPAD',        'stick move · X swing / pickaxe · Y dagger / channel · A dash · B snare / clear / leave · RB use / new board · LB revive'],   /* v0.85r §1 */
       ['#5a6080', '',               'Esc / START — pause · T — save telemetry' + (G.state === 'practice' ? ' · BACK / P — reset counters' : '')]
     ];
     let y = 250;
@@ -33354,7 +33351,7 @@ function drawPauseMenu(){
       ['#9fe0ff', 'FLOES',       'break the ice into exactly that many pieces   · the glacier'],
       ['#9fe0ff', 'THE GLIDE',   'never turn twice in a row   · the rainbow road'],   // v0.79: off the glacier's ladder · the TWIN line went with the twin (nothing deals it now)
       ['#ffb060', 'MINI VEINS',  'a small piece of ore in a wall or on the floor is one board, and its price is the same as a vein\'s'],   // v0.76
-      ['#5af0ff', 'STEPPING AWAY', 'hold RB at any ore to step away. The mine wakes when the third vein is cut'],   // v0.77
+      ['#5af0ff', 'STEPPING AWAY', 'B with no line at any ore steps away. The mine wakes when the third vein is cut'],   // v0.77 · v0.85r §1
       ['#c08cff', 'XP',          'a body or a board leaves orbs on the floor; pick them up to fill the bar at the bottom. A full bar deals a hand of three']   // v0.75 · v0.76: the boards shatter now, so the line says where the orbs come from
     ];
     let ry = 236;
@@ -33511,11 +33508,13 @@ function frameNote(iv, js){
   if(!q) q = FSTAT.min[m] = fstatRow();
   for(const r of [p, q]){ r.n++; r.sum += iv; if(iv > r.max) r.max = iv; if(iv > 25) r.o25++; if(iv > 50) r.o50++; r.foes += enemies.length; r[FX84.level === 'full' ? 'tf' : FX84.level === 'light' ? 'tl' : 'tm'] += iv; }
   p.h[Math.min(101, Math.round(iv))]++;
+  { const S = FX84.stats; q.bm = (q.bm || 0) + (S.beams | 0); q.bp = (q.bp || 0) + (S.beamPts | 0); q.rs = (q.rs || 0) + (S.ribbonSegs | 0); q.kn = (q.kn || 0) + (S.knives | 0); q.fi = (q.fi || 0) + (S.fires | 0); }   /* v0.85r §5 (MINE): the raster load, per minute */
   FSTAT.jsSum += js; FSTAT.jsN++;
   if(iv > PERF.hitchMs){
     FSTAT.hitches++;
     if(FSTAT.hitches <= PERF.hitchCap)
       tlog('hitch', { ms: +iv.toFixed(1), js: +js.toFixed(1), foes: enemies.length, zoom: +camS.toFixed(2), fx: fx.length, fxLevel: FX84.level,
+                      beams: FX84.stats.beams | 0, beamPts: FX84.stats.beamPts | 0, ribbonSegs: FX84.stats.ribbonSegs | 0, knives: FX84.stats.knives | 0, fires: FX84.stats.fires | 0,   /* v0.85r §5 (MINE) */
                       save: performance.now() - FSTAT.save.at < iv + 20 });   // an autosave sat inside this interval
   }
 }
@@ -33533,9 +33532,10 @@ function fstatSummary(){
   }
   out.all = row(N, SUM, MAX, O25, O50, H);
   /* v0.84 §6: three columns on the end (the old seven keep their places): the seconds spent at each effect tier */
-  out.byMinute = { cols: ['min', 'frames', 'avgMs', 'maxMs', 'over25', 'over50', 'foesAvg', 'fullS', 'lightS', 'minS'], rows: [] };
+  out.byMinute = { cols: ['min', 'frames', 'avgMs', 'maxMs', 'over25', 'over50', 'foesAvg', 'fullS', 'lightS', 'minS', 'beams', 'beamPts', 'ribbonSegs', 'knives', 'fires'], rows: [] };   /* v0.85r §5 (MINE): five more on the end, each a mean per counted frame */
   FSTAT.min.forEach((q, i) => { if(q && q.n) out.byMinute.rows.push([i, q.n, +(q.sum/q.n).toFixed(1), +q.max.toFixed(1), q.o25, q.o50, +(q.foes/q.n).toFixed(1),
-    +((q.tf || 0)/1000).toFixed(1), +((q.tl || 0)/1000).toFixed(1), +((q.tm || 0)/1000).toFixed(1)]); });
+    +((q.tf || 0)/1000).toFixed(1), +((q.tl || 0)/1000).toFixed(1), +((q.tm || 0)/1000).toFixed(1),
+    +((q.bm || 0)/q.n).toFixed(1), +((q.bp || 0)/q.n).toFixed(1), +((q.rs || 0)/q.n).toFixed(1), +((q.kn || 0)/q.n).toFixed(1), +((q.fi || 0)/q.n).toFixed(1)]); });
   { const T = { full: 0, light: 0, min: 0 }; for(const k of ['escort', 'hold', 'escape']){ const p = FSTAT.ph[k]; if(!p) continue; T.full += p.tf || 0; T.light += p.tl || 0; T.min += p.tm || 0; }
     out.fxTiers = { full: +(T.full/1000).toFixed(1), light: +(T.light/1000).toFixed(1), min: +(T.min/1000).toFixed(1), pin: FX84.pin };   /* v0.84 §6 */ }
   out.jsMeanMs = FSTAT.jsN ? +(FSTAT.jsSum/FSTAT.jsN).toFixed(2) : null;   // a true mean over the run's counted frames (frameMsAvg is an EMA of the last ~20)
@@ -33736,12 +33736,8 @@ const FEEL84P_DIALS = [
   { id: 'bmHang',   g: 'BOOMERANG · THE HEAVY RETURN', need: 'boomerang', label: 'LONGEST HANG', def: 1.5, lo: 0.5, hi: 3.0, step: 0.25, fmt: 's', tip: 'held at its apex this long it comes home on its own' },
   { id: 'bmTick',   g: 'BOOMERANG · THE HEAVY RETURN', need: 'boomerang', label: 'HANG · SAW TICK', def: 0.25, lo: 0.10, hi: 0.50, step: 0.05, fmt: 's', tip: 'the saw at the apex cuts this often' },
   /* ---- v0.84r: HER KIT (every default is today's number) ---- */
-  { id: 'pkSwingT', tab: 'HER', g: 'PICK · THE SWING', label: 'SWING DURATION', def: 0.18, lo: 0.06, hi: 0.40, step: 0.02, fmt: 's', tip: 'the whirlwind counts from its end' },
-  { id: 'pkCd',     tab: 'HER', g: 'PICK · THE SWING', label: 'SWING COOLDOWN', def: 0.35, lo: 0.10, hi: 0.80, step: 0.05, fmt: 's', tip: 'his sword\'s is 0.20' },
-  { id: 'pkReach',  tab: 'HER', g: 'PICK · THE SWING', label: 'SWING REACH', def: 56, lo: 40, hi: 100, step: 4, fmt: 'px', tip: '' },
   { id: 'pkKb',     tab: 'HER', g: 'PICK · THE SWING', label: 'KNOCKBACK', def: 25, lo: 0, hi: 100, step: 5, fmt: 'px', tip: '' },
   { id: 'pkStagger', tab: 'HER', g: 'PICK · THE SWING', label: 'STAGGER', def: 0, lo: 0, hi: 1.0, step: 0.05, fmt: 's', tip: 'twice his sword\'s: the point of the tool' },   /* v0.85n §2: 0 (YOURS; was 0.5) */
-  { id: 'pkStep',   tab: 'HER', g: 'PICK · THE SWING', label: 'SWING STEP', def: 6, lo: 0, hi: 40, step: 2, fmt: 'px', tip: '' },
   { id: 'whFill',   tab: 'HER', g: 'PICK · THE WHIRLWIND', label: 'SPIN-UP TIME', def: 1.0, lo: 0.3, hi: 2.0, step: 0.1, fmt: 's', tip: 'the hold: the spin grows to full over this long' },
   { id: 'whTick',   tab: 'HER', g: 'PICK · THE WHIRLWIND', label: 'SPIN TICK', def: 0.2, lo: 0.10, hi: 0.50, step: 0.05, fmt: 's', tip: 'how often the spin hits' },
   { id: 'whR',      tab: 'HER', g: 'PICK · THE WHIRLWIND', label: 'FULL SPIN · RADIUS', def: 112, lo: 60, hi: 180, step: 5, fmt: 'px', tip: 'it starts at 56' },   /* v0.85m §2 */   /* v0.85n §1 */
@@ -34082,7 +34078,11 @@ for(const d of [
     /* §1.5 THE VOLLEY */
     { id: 'blVoDmg', g: GV, label: 'THE VOLLEY · DAMAGE EACH', def: 6, lo: 1, hi: 20, step: 1, fmt: 'n', tip: 'Hades II: 30' },
     { id: 'blVoSpd', g: GV, label: 'THE VOLLEY · SPEED', def: 2280, lo: 600, hi: 3200, step: 40, fmt: 'pxs', tip: 'Hades II: 6000 x 0.38' },
-    { id: 'blVoStage', g: GV, label: 'THE VOLLEY · STAGE LENGTH', def: 0.3, lo: 0.1, hi: 0.8, step: 0.05, fmt: 's', tip: '2 blades at one stage, 3, 4, 5 (MAX) at four (MINE, settled)' },
+    /* v0.85r §4: the stages from Hades II's files (YOURS: "match the Hades II files"; the flat 0.3 s stage retired), the fan's gap, the root */
+    { id: 'blVoStage1', g: GV, label: 'THE VOLLEY · FIRST STAGE', def: 0.32, lo: 0.1, hi: 0.8, step: 0.02, fmt: 's', tip: '2 blades this long into the hold (Hades II: 0.32); before it a plain throw' },
+    { id: 'blVoStageN', g: GV, label: 'THE VOLLEY · EACH STAGE AFTER', def: 0.14, lo: 0.04, hi: 0.6, step: 0.02, fmt: 's', tip: '3, 4, 5 (MAX) blades each this much later (Hades II: 0.14: 0.46 / 0.60 / 0.74)' },
+    { id: 'blVoGap', g: GV, label: 'THE VOLLEY · BLADE TO BLADE', def: 0.08, lo: 0, hi: 0.3, step: 0.01, fmt: 's', tip: 'one blade every this long as the volley leaves (Hades II: 0.08); 0 is all at once' },
+    { id: 'blVoSlow', g: GV, label: 'THE VOLLEY · HIS SPEED CHARGING', def: 0, lo: 0, hi: 1, step: 0.05, fmt: 'x', tip: 'his walk while he holds the special: 0 rooted (Hades II), 1 free; he still turns to aim' },
     { id: 'blVoFan', g: GV, label: 'THE VOLLEY · FAN', def: 12, lo: 0, hi: 30, step: 1, fmt: 'n', tip: 'degrees between blades; no lock while charging: the fan goes where he aims' },
     /* §1.6 THE FEEL (Hades II's where it has them; the sword's grammar) */
     { id: 'blHsStab', g: GK, label: 'HITSTOP · A STAB', def: 0, lo: 0, hi: 150, step: 10, fmt: 'ms', tip: 'on a 0.1 s cooldown (Hades II gives the cooldown, not the length: MINE, 0)' },
@@ -34096,10 +34096,28 @@ for(const d of [
   const i = ORDER84R.HIM.findIndex(g => /^STAFF · THE POKE/.test(g));
   ORDER84R.HIM.splice(i >= 0 ? i + 1 : ORDER84R.HIM.length, 0, GC, GO, GF, GT, GV, GK);
 }
+/* v0.85r §3 — THE BATS' DIVE GATE: one dial on the SHARED tab (MINE: group THE BATS); a studio run's side B only; wraithGate85r() reads it */
+ORDER84R.SHARED.push('THE BATS');
+FEEL84P_DIALS.push({ g: 'THE BATS', g2: 'THE BATS', tab: 'SHARED', need: null, id: 'wrGate85r', label: 'BATS DIVING AT ONCE', def: 3, lo: 0, hi: 8, step: 1, fmt: 'n',
+  tip: 'a free great bat waits on its circle while this many great bats are winding up or diving (a formation\'s count too; a formation is never held); 0 is off (v0.85q: no limit)' });
+/* v0.85r §7 — HER PICK CHAIN: SNAPPY's numbers on the HER tab (group PICK · THE CHAIN, first on the tab; MINE: the ranges); a studio run only,
+   written into CH85M by chDials85r() from feelApply84p; outside a studio run the shipped CH85M holds */
+FMT84P.cx85r = v => v >= 1 ? 'OFF (the recovery\'s end)' : Math.round(v*100) + ' % of the recovery';
+ORDER84R.HER.unshift('PICK · THE CHAIN');
+for(const d of [
+  { id: 'chWind1_85r', label: 'SWING 1 · WINDUP', def: 0.10, lo: 0.04, hi: 0.30, step: 0.02, fmt: 's', tip: 'the press to the hit' },
+  { id: 'chWind2_85r', label: 'SWING 2 · WINDUP', def: 0.16, lo: 0.06, hi: 0.40, step: 0.02, fmt: 's', tip: 'she lunges 16 px through it' },
+  { id: 'chWind3_85r', label: 'FINISHER · WINDUP', def: 0.34, lo: 0.10, hi: 0.70, step: 0.02, fmt: 's', tip: 'the pirouette; rooted through it' },
+  { id: 'chRec1_85r', label: 'SWING 1 · RECOVERY', def: 0.15, lo: 0.04, hi: 0.50, step: 0.01, fmt: 's', tip: 'the hit to free; she walks at 35 % through it (v0.85q: 0.22)' },
+  { id: 'chRec2_85r', label: 'SWING 2 · RECOVERY', def: 0.18, lo: 0.04, hi: 0.50, step: 0.01, fmt: 's', tip: 'she walks at 35 % through it (v0.85q: 0.26, rooted)' },
+  { id: 'chRec3_85r', label: 'FINISHER · RECOVERY', def: 0.32, lo: 0.08, hi: 0.80, step: 0.01, fmt: 's', tip: 'she walks at 35 % through it (v0.85q: 0.45, rooted)' },
+  { id: 'chWin85r', label: 'CHAIN WINDOW', def: 0.35, lo: 0.10, hi: 1.00, step: 0.05, fmt: 's', tip: 'the next swing stays on offer this long after a recovery ends' },
+  { id: 'chCancel85r', label: 'CANCEL POINT', def: 0.6, lo: 0.2, hi: 1.0, step: 0.05, fmt: 'cx85r', tip: 'a press kept in the buffer ends a swing\'s recovery this far through (not the dash pirouette\'s); 1 is off (v0.85q)' }
+]) FEEL84P_DIALS.push({ g: 'PICK · THE CHAIN', g2: 'PICK · THE CHAIN', tab: 'HER', need: null, ...d });
 const FEEL84P_DEF = (() => { const o = {}; for(const d of FEEL84P_DIALS) o[d.id] = d.def; return o; })();
 const HER84S = {   /* v0.84s: her side of the three shared presets (MINE: his numbers scaled down — her pick is a light weapon; HER WALL SLAM stays off, it may be a card) */
   hades: { hRumble: 0.5, hHs: 30, hHsKill: 50, hShHit: 0.05, hShKill: 0.1, hKbT: 0.12, hFlash: 0.6, hFlashT: 0.1, hBurst: 1.5, hNums: true, hHurtStop: 60, hHurtFlash: 0.5 },
-  heavy: { hRumble: 1, pkSwingT: 0.24, pkCd: 0.5, pkKb: 40, hHs: 60, hHsKill: 80, hShHit: 0.1, hShKill: 0.2, hKbT: 0.18, hFlash: 0.8, hBurst: 2.5, hNums: true, hHurtStop: 100, hHurtFlash: 0.75 },
+  heavy: { hRumble: 1, pkKb: 40, hHs: 60, hHsKill: 80, hShHit: 0.1, hShKill: 0.2, hKbT: 0.18, hFlash: 0.8, hBurst: 2.5, hNums: true, hHurtStop: 100, hHurtFlash: 0.75 },
   brawler: { hRumble: 0.75, pkKb: 35, hShKill: 0.05, hKbT: 0.14, hFlash: 0.8, hFlashT: 0.1, hBurst: 2, hNums: true, hHurtFlash: 0.25 } };
 const HADES84S = { hitAt: 0.4, stepMode: 'glide', stepDist: 24, stepT: 0.08, lock: true, hsHit: 40, hsFin: 90, hsCharge: 100, hsKill: 60,
       kbT: 0.12, shHit: 0.05, shFin: 0.2, shKill: 0.15, seqN: 3, finDmg: 8, finKb: 80, finRec: 0.2, seqWin: 0.6,
@@ -34274,8 +34292,9 @@ function feelApply84p(){
   if(WT && WT.id === 'boomerang'){
     wr84r(WT.stats, 'cd', 'bmCd'); wr84r(WT.stats, 'spd', 'bmSpd'); wr84r(WT.stats, 'range', 'bmRange');
     wr84r(WT.hold, 'fill', 'bmFill'); wr84r(WT.hold, 'dmgMult', 'bmDmg'); wr84r(WT.hold.hang, 'max', 'bmHang'); wr84r(WT.hold.hang, 'tick', 'bmTick'); }
+  chDials85r();   /* v0.85r §7: her chain's dials (PICK · THE CHAIN) into CH85M in a studio run; the shipped numbers in every other */
   if(W2 && W2.id === 'pick'){
-    wr84r(W2.stats, 'swingT', 'pkSwingT'); wr84r(W2.stats, 'cd', 'pkCd'); wr84r(W2.stats, 'reach', 'pkReach'); wr84r(W2.stats, 'kb', 'pkKb'); wr84r(W2.stagger, 'press', 'pkStagger'); wr84r(W2.stats, 'stepIn', 'pkStep');
+    wr84r(W2.stats, 'kb', 'pkKb'); wr84r(W2.stagger, 'press', 'pkStagger');   /* v0.85r §7: the four old swing dials (duration, cooldown, reach, step) retired: the chain never read them */
     if(W2.hold && W2.hold.effect === 'whirlwind'){ wr84r(W2.hold, 'fill', 'whFill'); wr84r(W2.hold, 'tick', 'whTick'); wr84r(W2.hold.r, 1, 'whR'); wr84r(W2.hold.kb, 1, 'whKb'); wr84r(W2.hold, 'grace', 'whGrace'); wr84r(W2.hold, 'dizzy', 'whDizzy'); }
     if(W2.dashAtk){ wr84r(W2.dashAtk, 'reach', 'piReach'); wr84r(W2.dashAtk, 'cd', 'piCd'); wr84r(W2.dashAtk, 'win', 'piWin'); } }
   if(F.dashN <= 1){ ST84P.pool = 1; } else ST84P.pool = Math.min(ST84P.pool, F.dashN);
@@ -35927,7 +35946,7 @@ function titanOrbs85(sx, sy){
 /* ---------------------------------------------------------------- THE PER-CARD LEDGER (the audit's ask) */
 let CARD85 = {};
 function card85(id, dmg, hits){ const c = CARD85[id] || (CARD85[id] = { dmg: 0, hits: 0 }); c.dmg += dmg || 0; c.hits += hits == null ? 1 : hits; }
-function card85Sum(){ const o = {}; for(const k in CARD85) o[k] = { dmg: +CARD85[k].dmg.toFixed(1), hits: CARD85[k].hits }; return o; }
+function card85Sum(){ const o = {}; for(const k in CARD85) o[k] = { dmg: +CARD85[k].dmg.toFixed(1), hits: CARD85[k].hits, ...(CARD85[k].intr != null ? { intr: CARD85[k].intr } : {}) }; return o; }   /* v0.85r §2: a row's second field (BASH: intr, its interrupts) */
 /* ---------------------------------------------------------------- THE HOOKS
    kind: 'tap' (his regular tap: the strike chain / the staff's strikes), 'chg' (the charged regular: the pierce / the long burst),
    'spTap' (the special tap: the plain plunge / the bolt), 'spChg' (the charged special: the charged plunge / the moonburst),
@@ -36195,7 +36214,7 @@ function tick85(dt){
   T('runningstart', null, 'he can sprint while holding either charge, and his attacks no longer end his sprint');
   T('staydown', null, 'his weapon puts a stirring ore-back or Motherlode back down for its full time');
   T('snare', null, 'shout cooldown 2 seconds shorter, but the ring is smaller (150 to 110)');
-  T('pin', null, 'his shout freezes enemies in place for 2.6 seconds, but its cooldown is 3 seconds longer');
+  T('pin', null, 'your shout roots what it catches');   /* v0.85r §2 (YOURS): a root, not a stun; the +3 s cooldown stays */
   T('roar', null, 'his shout also makes every enemy nearby turn and attack him');
   T('reap', null, 'his shout also yanks every XP orb inside its ring straight to him');
   T('harvest', 'REAPING LIGHT', 'while she channels, XP orbs inside her light drift to her');
@@ -38215,6 +38234,7 @@ function updateWraith(e, dt, tp, spd){
     if(w.t > 0){ w.ang += dt*BIRD85G.turn; const ox = tp.x + Math.cos(w.ang)*BIRD85G.R, oy = tp.y + Math.sin(w.ang)*BIRD85G.R, d = Math.hypot(ox - e.x, oy - e.y) || 1;
       e.x += (ox - e.x)/d*Math.min(d, spd*dt); e.y += (oy - e.y)/d*Math.min(d, spd*dt); return; }
     if(!losClear(e.x, e.y, tp.x, tp.y)){ w.t = 0.4; return; }   /* no clear line: it circles on and looks again */
+    if(wraithGated85r(e)){ w.t = 0.4; return; }   /* v0.85r §3 (YOURS): the dive gate; WRAITH_GATE or more great bats already winding up or diving: it circles on and looks again, as with no clear line */
     w.phase = 'windup'; w.t = A.windup; w.dx = (tp.x - e.x)/dT; w.dy = (tp.y - e.y)/dT; w.left = dT + A.overshoot; w.fixed = null; w.tgt = tp; w.hit = false; e.diveT = 0; SFX.diveTell();
     tlog('wraith_windup', {});
     return;
@@ -38708,8 +38728,9 @@ function planSpec85l(i){ const rungs = levelRungs(); const sp = i < rungs.length
    Motherlode three (its own ladder when it has one, the level's otherwise) */
 function planRoomSpecs85l(room){
   if(room.mini){ const sp = (room.rungs && room.rungs[0]) || miniLadderSpec(Math.max(0, (room.tier || 1) - 1)); return [{ spec: sp, hard: !!sp.hard, redeal: true }]; }
+  sideTiersEnsure85r(room);   /* v0.85r §6 */
   const rg = room.rungs;
-  return [0, 1, 2].map(i => { const sp = rg ? rg[Math.min(i, rg.length - 1)] : levelRungs()[Math.min(i, levelRungs().length - 1)]; return { spec: sp, hard: !!sp.hard, redeal: false }; });
+  return [0, 1, 2].map(i => { const sp = rg ? rg[Math.min(i, rg.length - 1)] : levelRungs()[Math.min(i, levelRungs().length - 1)]; return { spec: sp, hard: !!sp.hard, redeal: !!(room.tiers && room.tiers[i] >= 4) }; });   /* v0.85r §6: a vein's tier-4 / tier-5 board re-dealt if empty, as the minis' */
 }
 /* the board builder, steppable: genPanelFromSpec's own rules (THE DRAW's redeal), plus the mini's 4 tries on an empty board */
 function* planGen85l(spec, hard, redeal){
@@ -38799,6 +38820,7 @@ function planMainSite85l(){
 /* §2 the spares: one per rung in use */
 function planSpareKeys85l(){
   const ks = new Set([0, 1, 2]);
+  for(const r of sideRooms) if(!r.done && !r.practice && r.tiers) for(let i = r.solved || 0; i < r.tiers.length; i++) ks.add(r.tiers[i] - 1);   /* v0.85r §6: the veins' tiers keep their reroll spare */
   for(const m of miniVeins) if(!m.done) ks.add(Math.max(0, (m.tier || 1) - 1));
   for(const v of rockVeins) if(!v.done && v.mini) ks.add(Math.max(0, (v.tier || 1) - 1));
   for(const e of enemies) if(!e.dead && isRock(e) && e.kind !== 'mother' && e.tier84f) ks.add(e.tier84f - 1);
@@ -38808,7 +38830,8 @@ function planSpareKeys85l(){
 /* the rung the board on screen was dealt at (the spare's key); null where there are no spares (the hall's own ladder) */
 function planKey85l(){
   const s = atVein();
-  if(s){ if(s.practice || (s.rungs && !s.mini && !s.rock)) return null; if(s.mini) return Math.max(0, (s.tier || 1) - 1); return Math.min(s.solved, 2); }
+  if(s){ if(s.practice) return null; if(s.tiers && !s.mini && !s.rock) return sideTier85r(s) - 1;   /* v0.85r §6: a dealt vein's key is its board's tier */
+    if(s.rungs && !s.mini && !s.rock) return null; if(s.mini) return Math.max(0, (s.tier || 1) - 1); return Math.min(s.solved, 2); }
   return G.stageIdx;
 }
 /* a reroll: the spare for this rung, if it is made, differs from the board she has, and is not empty */
@@ -38906,6 +38929,7 @@ function planMainReady85l(){
 }
 /* ---------------------------------------------------------------- §4 POWDER KEG's reach by the rung */
 function kegRung85l(site, o){
+  if(site === 'side' && o && o.tiers) return Math.max(0, o.tiers[o.tiers.length - 1] - 1);   /* v0.85r §6: the vein's last board's tier */
   if(site === 'side' || site === 'motherlode') return 2;
   if(site === 'mini') return Math.max(0, (o.tier || 1) - 1);
   if(site === 'rock') return Math.max(0, (o.tier84f || 1) - 1);
@@ -38987,9 +39011,10 @@ function bigMapDraw85l(){
    ================================================================================================================================ */
 const CH85M = {
   arc: 56, fin: 112, lunge: 16, lock: 34, lockDeg: 25,          /* SIZE: MIDDLE (YOURS); the finisher's reach 150 (YOURS) */   /* v0.85n §1: 56 and 112 (sizes sampler 1, YOURS; was 112 and 150) */
-  wind: [0.10, 0.16, 0.34], rec: [0.22, 0.26, 0.45], win: 0.35,  /* sampler 4's tuned chain (MINE, "settled enough", YOURS) */
+  wind: [0.10, 0.16, 0.34], rec: [0.15, 0.18, 0.32], win: 0.35,  /* sampler 4's tuned chain (MINE, "settled enough", YOURS) */   /* v0.85r §7: SNAPPY (YOURS, pick sampler 1): rec was 0.22 / 0.26 / 0.45 */
+  cancel: 0.6,   /* v0.85r §7 (SNAPPY): a buffered press may end a chain step's recovery once it is this far through (chTick85m); 1 = never */
   dmg: [1, 2, 4], kb: [1, 1.15, 2.4], stun: [0, 0, 0],      /* x her pick's damage (QUARRY EDGE scales the chain) and knockback */   /* v0.85n §2: no stagger (YOURS; was 0.5, 0.6, 1.0) */
-  slow: [0.35, 0.35, 0], feet: [{ k: 0.35, t: 0.2 }, { k: 0, t: 0.28 }, { k: 0, t: 0.3 }],
+  slow: [0.35, 0.35, 0], feet: [{ k: 0.35, t: 0.15 }, { k: 0.35, t: 0.18 }, { k: 0.35, t: 0.32 }],   /* v0.85r §7 (SNAPPY): she walks at 35 % through every recovery (was rooted after swings 2 and 3) */
   arcs: [{ from: -110, to: 90 }, { from: 130, to: -90 }], sweep: 0.10,   /* v0.85n §1: swing 1 200 deg (YOURS; was -130 to 110), swing 2 220 deg as before */
   dashDmg: 2, dashRec: 0.3,
   y2: { T: 0.36, up: 0.06, downAt: 0.18, down: 0.14, h: 28 },    /* the raise: up over 0.06 s, down over 0.14 s from 0.18 s */
@@ -39039,7 +39064,8 @@ function chStart85m(){
   C.dir = [P2.face[0], P2.face[1]]; C.st = 'wind'; C.t = 0; C.T = CH85M.wind[n]; C.dashN = P2.dashN || 0;
   P2.holdFrom = Infinity; P2.pickN = (P2.pickN || 0) + 1;
   SFX.swing();
-  tlog('p2_swing85m', { n: n + 1 });
+  const cx85r = C.cx85r === G.t; C.dash85r = false;   /* v0.85r §7: a chain step's recovery (the cancel point applies); this press fired at a cancel point this frame */
+  tlog('p2_swing85m', { n: n + 1, rec: CH85M.rec[n], cancelled: cx85r });   /* v0.85r §7: rec = this step's recovery as shipped; cancelled = the press that started it ended the previous step's recovery early */
 }
 /* the finisher's and the dash's pirouette: a full circle at reach R */
 function spin85m(dmg, stun, kb, R, tag, full85q, fin85q){   /* v0.85q §6 */
@@ -39088,7 +39114,7 @@ function chDashSpin85m(){
   C.n = 0; C.winT = 0; P2.pickQueued = false;
   SFX.swing();
   const h = spin85m(CH85M.dashDmg*(WHIRL83_DMG || 1), W2.stagger.dash || 0, W2.stats.kb, DA2.reach, 'dash', STUN85Q.pirouette, false);   /* v0.85q §6 */
-  C.st = 'rec'; C.t = 0; C.T = CH85M.dashRec; C.kind = 'spin';
+  C.st = 'rec'; C.t = 0; C.T = CH85M.dashRec; C.kind = 'spin'; C.dash85r = true;   /* v0.85r §7: the dash pirouette's recovery is never cancelled */
   P2.holdFrom = G.t + CH85M.dashRec;
   vstat(W2.id + ':dash', 1, h.n, h.dealt);
   tlog('p2_pirouette', { held: h.n, dmg: CH85M.dashDmg });
@@ -39115,6 +39141,7 @@ function chTick85m(dt, legs){
     if(C.t >= C.T - 1e-6) chLand85m();   /* 1e-6: six frames of 1/60 make 0.10 s */
     return; }
   if(C.t >= C.T - 1e-6){ C.st = 'idle'; }
+  else if(P2.pickQueued && C.st === 'rec' && !C.dash85r && C.t >= CH85M.cancel*C.T - 1e-6){ C.st = 'idle'; C.cx85r = G.t; }   /* v0.85r §7 (SNAPPY): THE CANCEL POINT — a buffered press ends a chain step's recovery once it is CH85M.cancel through; the buffer gate below fires it this frame (pickDown -> chStart85m); the window (win) still counts from here */
 }
 /* after her walk: the finisher's windup keeps the direction it started in */
 function chFace85m(){ const C = ch85m(); if(C.st === 'wind' && C.kind !== 's') P2.face = [C.dir[0], C.dir[1]]; }
@@ -39435,7 +39462,7 @@ function tallyRows85n(){
   const b = G.breakdown; if(!b) return [];
   return [
     ['ore banked  ×' + G.ore, b.ore, 'ore'],
-    ['side veins  ×' + (G.sideOre || 0), b.sideVeins, 'sideVeins'],
+    [sideVeinsLabel85r(), b.sideVeins, 'sideVeins'],   /* v0.85r §6 */
     ['mini veins  ×' + (G.miniOre || 0), b.miniVeins || 0, 'miniVeins'],
     ['time bonus', b.timeBonus, 'timeBonus'],
     ['no-hit hold', b.noHitHold, 'noHitHold'],
@@ -39758,7 +39785,6 @@ function killsByRock85q(){
    (cards85: dmg 0). The log: enemy_interrupted's `by` names the card when its stagger broke the windup (`hit` keeps the ledger id).
    ================================================================================================================================== */
 const STUN85Q = {
-  flinch: 0.5,            /* FLINCH: a finishing blow (YOURS) */
   fresh: 1.2,             /* a card's stamp names the interrupt it caused within this long (MINE) */
   /* STAGGERING BLOWS: v0.85m's shipped numbers (FACT; see above) */
   sword: 0.5, swordDash: 0.5, plunge: 0.7, plungeChg: 0.6, pierce: 0.4,
@@ -39768,36 +39794,38 @@ const STUN85Q = {
 /* the hook every hit site calls beside its own stun: e the body, full its move's v0.85m stun (s), fin true for a finishing blow.
    s = the larger of the two cards' (STAGGERING BLOWS: full; FLINCH: 0.5 on a finisher); the body's stun is raised to s, stamped
    with the card that gave it ('staggering' on a tie), and s is returned (0 when neither card speaks). */
-function applyCardStun85q(e, full, fin){
-  if(!e) return 0;
-  const a = REW.staggering85q ? (+full || 0) : 0, b = REW.flinch85q && fin ? STUN85Q.flinch : 0, s = Math.max(a, b);
+function applyCardStun85q(e, full, fin){   /* v0.85r §2: STAGGERING BLOWS alone (FLINCH is gone; fin is kept for the callers, unread) */
+  if(!e || !REW.staggering85q) return 0;
+  const s = +full || 0;
   if(!(s > 0)) return 0;
   e.stun = Math.max(e.stun || 0, s);
-  const card = a >= b ? 'staggering' : 'flinch';
-  e.stunCard85q = { card, t: G.t, s };
-  card85(card === 'flinch' ? 'flinch85q' : 'staggering85q', 0);
+  e.stunCard85q = { card: 'staggering', t: G.t, s };   /* the ledger row counts the interrupt it causes (stunCardTake85q), not the stamp */
   return s;
 }
 /* enemy_interrupted (intr85n): the card whose stagger broke the windup, if its stamp is fresh; the stamp is used once and a stale one dropped */
 function stunCardTake85q(e, by){
   const c = e && e.stunCard85q; if(!c) return null;
   e.stunCard85q = null;
-  return !by && G.t - c.t <= STUN85Q.fresh ? c.card : null;
+  const k85r = !by && G.t - c.t <= STUN85Q.fresh ? c.card : null;
+  if(k85r === 'staggering') card85('staggering85q', 0);   /* v0.85r §2: STAGGERING BLOWS' hits row counts interrupts, not stamps */
+  return k85r;
 }
-/* ---------------------------------------------------------------- the two cards, in the pool (47 -> 49: 11 epic, 11 rare, 27 common) */
+/* ---------------------------------------------------------------- the two cards, in the pool. v0.85r §2: BASH (rare, his) in FLINCH's place,
+   the 47th card: 11 epic, 11 rare, 25 common */
 {
   REWARD_POOL.push(
-    { id: 'flinch85q', label: 'FLINCH', desc: 'your finishing blows stagger',
-      apply: () => { REW.flinch85q = true; }, who: 'both', rarity: 'common' },
+    { id: 'bash85r', label: 'BASH', desc: 'your shout stuns what it catches — windups and dives break',
+      apply: () => { REW.bash85r = true; }, who: 'his', rarity: 'rare' },
     { id: 'staggering85q', label: 'STAGGERING BLOWS', desc: 'every hit of yours staggers, as it once did',
       apply: () => { REW.staggering85q = true; }, who: 'both', rarity: 'epic' });
-  CARD_WHO.flinch85q = 'both'; CARD_WHO.staggering85q = 'both';
-  RARITY84A.flinch85q = 'common'; RARITY84A.staggering85q = 'epic';
-  REW.flinch85q = false; REW.staggering85q = false;
-  /* the bots: both ride every hit, so the verb is 'swing' (as PLINK!'s); the rarity adds an epic's +1 (botCardScore84m) */
-  CARD84M.verb.flinch85q = 'swing'; CARD84M.verb.staggering85q = 'swing';
-  /* PLACEHOLDER icons until a sampler (as the v0.85 cards borrowed theirs): FLINCH borrows PINNING SNARE's, STAGGERING BLOWS STAY DOWN's */
-  ICONS85A.flinch85q = c => drawCardIcon('pin', 0, 0, 20, c.strokeStyle);
+  CARD_WHO.bash85r = 'his'; CARD_WHO.staggering85q = 'both';
+  RARITY84A.bash85r = 'rare'; RARITY84A.staggering85q = 'epic';
+  REW.bash85r = false; REW.staggering85q = false;
+  /* the bots: STAGGERING BLOWS rides every hit ('swing', as PLINK!'s; an epic's +1); BASH rides the shout ('shout', as WAR CRY's; a rare's +0.5) (botCardScore84m) */
+  CARD84M.verb.bash85r = 'shout'; CARD84M.verb.staggering85q = 'swing';
+  CARDUSE84M.bash85r = ['p1_snare'];   /* the ledger's use count: his shouts, as REAPING SNARE's */
+  /* PLACEHOLDER icons until a sampler (as the v0.85 cards borrowed theirs): BASH borrows PINNING SNARE's (as FLINCH did), STAGGERING BLOWS STAY DOWN's */
+  ICONS85A.bash85r = c => drawCardIcon('pin', 0, 0, 20, c.strokeStyle);
   ICONS85A.staggering85q = c => drawCardIcon('staydown', 0, 0, 20, c.strokeStyle);
 }
 /* ==================================================================================================================================
@@ -39814,7 +39842,7 @@ var K85Q = { sweep: 0.08, rec: 0.17, stabGap: 0.08, stabLive: 0.10, stabRec: 0.4
   tip: 30, stabW0: 11.5, stabW1: 38, ovalAt: 76, ovalK: 0.62, arc1: [-70, 60], arc2: [70, -60], flipArc: [130, -110],
   lock: [76, 76, 106, 114], flipLock: 106, flipLockDeg: 100, thLockDeg: 37.5,
   kb: { slice: 0.9, stab: 0.7, dbl: 1.2, flip: 1.0, om: 1.1, throw: 0.8, volley: 0.8 },
-  blinkT: 0.1, omLock: 0.28, omRec: 0.38, thLock: 0.12, thCancel: 0.23, thSlowT: 0.45, thSlow: 0.15,
+  blinkT: 0.1, omLock: 0.28, omRec: 0.38, thLock: 0.12, thCancel: 0.33, thSlowT: 0, thSlow: 0.15, voLock: 0.27, voCancel: 0.38, voFeet: 0.5,   /* v0.85r §4: no post-throw slow (thSlowT 0; was 0.23 + 0.45 at 0.15); the volley's recovery 16 / 23 / 30 frames (Hades II's files) */
   stabHsCd: 0.1, throwHsCd: 0.3, seekR: 120, seekRate: 9, flipStep: 20, shotR: 8,
   rumble: { hit: 0.15, dbl: 0.35, om: 0.27, throw: 0.18 } };
 var BLSHOT85Q = null, BLFX85Q = [], BLSTUCK85Q = [], BLHS85Q = {};
@@ -39840,8 +39868,8 @@ function blinkNow85q(){ const B = P1.bk85q; return !!(B && !B.arrived); }
   const H = FEEL84P_DIALS.find(d => d.id === 'hisWpn'); if(H && !H.opts.includes('blades')){ H.opts = H.opts.concat(['blades']); H.tip = 'THE ARMORY: what he took in the hub · or the studio\'s own pick (the blade, DESCURA, THE SISTER BLADES). The computer always holds the blade'; }
   FMT84P.wpn84v = v => v === 'staff' ? 'DESCURA' : v === 'sword' ? 'THE STYGIAN BLADE' : v === 'blades' ? 'THE SISTER BLADES' : 'THE ARMORY\'S';
   /* the presets (as MEL'S STAFF and CO-OP MEL) */
-  FEEL84P_PRESETS.push({ name: 'MEL\'S BLADES', scope: 'HIM', dials: { ...HADES84S, rumble: 0.5, hisWpn: 'blades' } });
-  FEEL84P_PRESETS.push({ name: 'CO-OP BLADES', scope: 'BOTH', dials: { ...FEEL84P_PRESETS.find(p => p.name === 'CO-OP ZAG').dials, hisWpn: 'blades' } });
+  FEEL84P_PRESETS.push({ name: 'MEL\'S BLADES', scope: 'HIM', dials: { ...HADES84S, rumble: 0.5, hisWpn: 'blades', blVoSlow: 0, blVoStage1: 0.32, blVoStageN: 0.14, blVoGap: 0.08 } });   /* v0.85r §4: the new dials */
+  FEEL84P_PRESETS.push({ name: 'CO-OP BLADES', scope: 'BOTH', dials: { ...FEEL84P_PRESETS.find(p => p.name === 'CO-OP ZAG').dials, hisWpn: 'blades', blVoSlow: 0, blVoStage1: 0.32, blVoStageN: 0.14, blVoGap: 0.08 } });   /* v0.85r §4: the new dials */
   /* the giant's (GILDED TITAN) */
   TITAN85_DMG.push('blD1', 'blD2', 'blD3', 'blD4', 'blOmDmg', 'blFlDmg', 'blThDmg', 'blVoDmg');
   TITAN85_REACH.push('blR1', 'blR3', 'blR4', 'blFlR'); TITAN85_KB.push('blKb');
@@ -40057,12 +40085,12 @@ function blTop85q(dt){
   }
   if(M.held && P1IN.cur.alt && !P1.sprintFire){
     M.chg += dt;
-    const st = Math.min(4, Math.floor((M.chg + 1e-9)/Math.max(0.01, F.blVoStage)));   /* no lock while charging (FACT): the fan goes where he aims */
+    const st = blStage85r(M.chg, F);   /* v0.85r §4: 2 blades at 0.32 s, then +0.14 each (Hades II's files) */   /* no lock while charging (FACT): the fan goes where he aims */
     if(st > M.stage){ M.stage = st; if(st >= 4) SFX.ready(); else SFX.stepTick(); tlog('p1_blade_stage85q', { n: st + 1 }); }
   } else if(M.held){
     const st = M.stage;
     M.held = false; M.chg = 0; M.stage = 0;
-    if(st >= 1) blVolley85q(st + 1, false);
+    if(st >= 1){ blVolley85q(st + 1, false); blVoRec85r(); }   /* v0.85r §4: and its recovery */
     else if(M.cd <= 0 && !busy()) blThrow85q(M);
     else M.q = true;
   }
@@ -40097,7 +40125,7 @@ function blVolley85q(n, half){
 function blVolleyTick85q(dt){
   const V = P1.bv85q; if(!V) return;
   V.t += dt;
-  const F = F84p(), gap = K85Q.stabGap, bank = REW.dagBounce ? V85.bank : 1, base = Math.atan2(V.f[1], V.f[0]);
+  const F = F84p(), gap = Math.max(0, F.blVoGap), bank = REW.dagBounce ? V85.bank : 1, base = Math.atan2(V.f[1], V.f[0]);   /* v0.85r §4: the gap a dial (0.08, Hades II's; 0 = all at once); K85Q.stabGap stays the five stabs' */
   while(V.i < V.n && V.t >= V.i*gap - 1e-6){
     const a = base + (V.i - (V.n - 1)/2)*F.blVoFan*Math.PI/180;
     BLSHOT85Q = { dmg: V.dmg, spd: F.blVoSpd, range: F.blThRange*bank, r: K85Q.shotR, kb: F.blKb*K85Q.kb.volley, ledger: 'blades:topHold', kind: 'spChg', lock: null, seek: true, t0: t84v(), vi: V.i };
@@ -40126,7 +40154,7 @@ function blShotHit85q(k, e, dmg){
 }
 /* ---------------------------------------------------------------- once a step (tick84p) */
 function blTick85q(dt){
-  if(!blOn85q()){ if(P1.bl85q || P1.fl85q || P1.bk85q || P1.bv85q || P1.bt85q) blReset85q(); return; }
+  if(!blOn85q()){ P1.vr85r = null; if(P1.bl85q || P1.fl85q || P1.bk85q || P1.bv85q || P1.bt85q) blReset85q(); return; }
   const T = t84v();
   if(P1.downed){ P1.bl85q = null; P1.fl85q = null; P1.bv85q = null; P1.om85q = null; if(P1.bk85q && !P1.bk85q.arrived) P1.bk85q = null; }
   /* the chain step: its hits; a new dash cancels what has not landed */
@@ -40162,9 +40190,10 @@ function blTick85q(dt){
   if(P1.os85q && T - P1.os85q.t0 > 0.6) P1.os85q = null;
   /* the volley's blades, one every 0.08 s */
   blVolleyTick85q(dt);
-  /* the throw's cost: 0.12 s locked, 0.23 more a press or a dash ends, then 0.45 s at 0.15 */
+  blVoRecTick85r(dt);   /* v0.85r §4: after the volley */
+  /* the throw's cost: 0.12 s locked, 0.33 more (to 0.45) a press, a dash or a sprint ends; no slow after (v0.85r §4: Hades II's files) */
   const TH = P1.th85q;
-  if(TH){ TH.t += dt; if(P1IN.edge('atk') || P1.dashT > 0) TH.cancel = true; if(TH.t >= K85Q.thLock + K85Q.thCancel + K85Q.thSlowT) P1.th85q = null; }
+  if(TH){ TH.t += dt; if(P1IN.edge('atk') || P1.dashT > 0 || P1.sprint) TH.cancel = true; if(TH.t >= K85Q.thLock + K85Q.thCancel + K85Q.thSlowT) P1.th85q = null; }
   if(P1.bo85q && T - P1.bo85q.t0 > 0.5) P1.bo85q = null;
   BLFX85Q = BLFX85Q.filter(q => T - q.t0 < 0.6 && T >= q.t0 - 1);
   BLSTUCK85Q = BLSTUCK85Q.filter(q => T - q.t0 < 0.1 + 1e-9 && !q.e.dead);
@@ -40173,16 +40202,15 @@ function blTick85q(dt){
 function blMove85q(dt){
   if(blinkNow85q()) return true;
   if(P1.om85q && P1.om85q.lockT > 0) return true;   /* the stab's 0.28 s */
-  if(P1.bv85q) return true;   /* the volley leaving his hands */
+  if(blVoFeet85r()) return true;   /* v0.85r §4: the volley leaving his hands, then its recovery (0.27 hard, to 0.5 unless a dash or sprint) */
   const TH = P1.th85q; if(TH && (TH.t < K85Q.thLock || (TH.t < K85Q.thLock + K85Q.thCancel && !TH.cancel))) return true;
   if(P1.gl84p){ glide84p(dt); return true; }
   return false;
 }
-/* his walk while he holds the special (0.45, MINE: the Ω attack's), and the throw's slow; RUNNING START carries both at a sprint */
+/* his walk while he holds the special (v0.85r §4: blVoSlow, 0 = rooted, Hades II's files; the Ω attack keeps blOmSlow 0.45); no slow after the throw (v0.85r §4); RUNNING START carries the hold at a sprint */
 function blSlow85q(){
   if(P1.sprint && REW.runningStart) return 1;
-  const M = P1.bt85q; if(M && M.held && M.chg > 0) return F84p().blOmSlow;
-  const TH = P1.th85q; if(TH && !TH.cancel && TH.t >= K85Q.thLock + K85Q.thCancel) return K85Q.thSlow;
+  const M = P1.bt85q; if((M && M.held && M.chg > 0) || P1IN.edge('alt')) return F84p().blVoSlow;   /* the press's own frame too (the walk runs before blTop85q): the charge roots him from the press */
   return 1;
 }
 /* the page: the blades' groups only while they are held; the sword's and the staff's hidden then */
@@ -40302,7 +40330,7 @@ function blOwn85q(o, face){
   if(V){ const th = thOf(V.f), d = [Math.cos(th), Math.sin(th)], ph = (T - V.t0)/K85Q.stabGap, flick = Math.abs(Math.sin(ph*Math.PI)), alt = Math.floor(ph) % 2;
     const rh = [d[0]*(10 + (alt ? 0 : 6*flick)) + (d[1] ? 2 : 0), -10 + d[1]*(10 + (alt ? 0 : 6*flick))], lh = [d[0]*(6 + (alt ? 6*flick : 0)) - 2, -9 + d[1]*(6 + (alt ? 6*flick : 0))];
     o.th = th; o.tilt = side(th) ? 0.06*m : 0; knives(rh, th, lh, th, 0.6); return o; }
-  if(M && M.held && M.chg > 0){ const th = thOf(P1.face), d = [Math.cos(th), Math.sin(th)], k = Math.min(1, (M.stage + U.pr(M.chg - M.stage*F.blVoStage, 0, F.blVoStage))/4);
+  if(M && M.held && M.chg > 0){ const th = thOf(P1.face), d = [Math.cos(th), Math.sin(th)], k = blFill85r(M, F);   /* v0.85r §4: the stages' rule */
     const rh = [d[0]*4 + 4, -17 - 2*k + d[1]*4], lh = [d[0]*2 - 5, -15 - 2*k + d[1]*3];
     o.th = th; o.pose84v = crouch85q(0.15*k); knives(rh, th - 1.2, lh, th - 1.6, 0.35 + 0.65*k); return o; }
   /* ---- THE THROWN BLADE: the front hand flicks out and is empty a moment ---- */
@@ -40476,6 +40504,281 @@ function glyphBlades85q(){
   blade85q(ctx, -9, 15, -Math.PI/2 + 0.55, 1, 0.25, 1, 1.45);
   blade85q(ctx, 9, 15, -Math.PI/2 - 0.55, -1, 0.25, 1, 1.45);
   ctx.restore();
+}
+/* v0.85r §1 — HER PAD AT THE ORE: "B IS BACK, RB IS THE PUZZLE" (YOURS, 2026-10-10, 13:41; the controls sampler's scheme B,
+   harness/controls1/inner.js, checked 44 / 0). Every ore's board (a side vein, a mini vein, a rock's, the main ore's):
+     RB          enter / resume, as before (a rising edge, within reach of the nearest ore)
+     RB held     a new board: rerollTick83 is fed RB, not B (MINE, as the sampler: the press that entered must be let go first)
+     B, a line   the clear, as before (the whole line)
+     B, no line  leave the board: the old RB-hold leave's lines (a side / mini / rock board) or leaveHold('step_away') (the main
+                 ore), and only once the line has been empty VEIN_B_GUARD s (since the last clear, or since the line became
+                 empty), so an undo-spam cannot overshoot into a leave; a guarded press does nothing and logs nothing
+   After any leave RB enters / resumes no ore for VEIN_RELOCK s (a refused press logs nothing). RB held never leaves any more
+   (VEIN_LEAVE_T stays defined, retired). The pause lines carry by: 'b'. */
+const VEIN_B_GUARD = 0.25;   /* YOURS (the sampler's dial, 0.25): B with no line leaves only once the line has been empty this long */
+const VEIN_RELOCK = 0.25;    /* YOURS (the sampler's dial, 0.25): after a leave, RB is refused at every ore this long */
+const VEIN_CAPTION85R = 'B clear · B again leave · hold RB new board';   /* YOURS: the board panel's footer (was: B clear, hold B reroll, hold RB step away) */
+function relockSet85r(){ G.relockAt85r = G.t + VEIN_RELOCK; }
+/* true while the lockout runs; a stale stamp from an earlier run (G.t starts again at 0) can never lock for longer than VEIN_RELOCK */
+function relocked85r(){ const a = G.relockAt85r; return a != null && G.t < a && a - G.t <= VEIN_RELOCK + 1e-6; }
+/* ==================================================================================================================================
+   v0.85r §2 — BASH REPLACES FLINCH; PIN BECOMES A ROOT (YOURS, 2026-10-10: "PIN was meant to be a root in place effect, not a full
+   stun. The baseline effect of the shout is a slow. So PIN > the baseline and BASH > PIN." BASH: "on his shout press he stuns all
+   enemies in an aoe around him. The shout is still triggered at the end of the button hold like it does now." "The stun length on
+   bash should be short. 1.2 sec is good. Yes, it breaks windups and dives. It is the hard cc in the game. BASH is a rare.")
+   Names ending 85r are new.
+   THE ROOT (new): e.rootT seconds, ticked down beside e.stun (rootTick85r, in updateEnemies83). A rooted body's speed is 0 and it
+     takes no displacement: shoveEnemy, kb84p, herKb84r (his and her knockbacks, her whirlwind's fling) do nothing to it, a rooted
+     body is never wall-slammed (it was not shoved), and whatever else moved it in the enemies' turn is put back where it stood
+     (rootPin85r, after updateEnemies). It still turns, winds up and strikes if the couple is in reach; the root breaks nothing.
+     MINE: a great bat in its wind-up or dive when rooted holds where it is for the root (its dive is movement; updateWraith83 is
+     not run while it holds), then goes back to its circle. Drawn as the snare's held look (PINNING SNARE's stakes, drawSnareHold),
+     the snare's clock kept at least the root's so every body that draws the hold draws it; no stagger flash (no stun).
+   PIN (REW.pinSnare) roots for SNARE_HOLD (2.6 s) instead of stunning; it cancels nothing.
+   BASH (bash85r, rare, his; the pool's 47th card in FLINCH's place): on the shout's release every body in the ring (d < SR, the
+     charged radius) takes e.stun = max(e.stun, 1.2) and its wind-up / dive / sentry's aim / stalker's crouch breaks (the old PIN
+     lines, credited 'bash' in enemy_interrupted). The ledger cards85.bash85r: hits = bodies stunned, intr = interrupts.
+   The ladder with both held: the stun covers the root (the root runs on after it). Shake / sound: the shout's own.
+   ================================================================================================================================== */
+const BASH85R = { stun: 1.2 };   /* YOURS: "1.2 sec is good" */
+/* a second field on a card's ledger row (cards85: { dmg, hits, intr }) */
+function card85x85r(id, field, n){ const c = CARD85[id] || (CARD85[id] = { dmg: 0, hits: 0 }); c[field] = (c[field] || 0) + (n == null ? 1 : n); }
+/* PIN: the shout roots what it catches */
+function pinRoot85r(e){
+  e.rootT = Math.max(e.rootT || 0, SNARE_HOLD);
+  if(!e.rootAt85r) e.rootAt85r = [e.x, e.y];
+  e.kb84p = null;   /* a slide in flight stops where it is */
+  e.snareT = Math.max(e.snareT || 0, e.rootT);
+}
+/* BASH: the shout stuns what it catches; wind-ups and dives break (credited 'bash') */
+function bashHit85r(e){
+  e.stun = Math.max(e.stun || 0, BASH85R.stun);
+  card85('bash85r', 0);
+  let n = 0;
+  if(e.atkPhase === 'windup'){ intr85n(e, 'windup', e.atkT, 'bash'); e.atkPhase = 'idle'; e.atkT = 0; tlog('slam_cancelled', { by: 'bash' }); n++; }
+  if(e.wr && (e.wr.phase === 'dive' || e.wr.phase === 'windup')){
+    intr85n(e, e.wr.phase === 'windup' ? 'dive_windup' : 'dive', e.wr.t, 'bash'); e.wr.res85n = null;
+    e.wr.phase = 'circle'; e.wr.t = ATK.wraith.circle; e.wr.held85r = false; e.diveT = 0;
+    tlog('dive_cancelled', { by: 'bash' }); n++;
+  }
+  /* MINE: the stun's own breaks (updateEnemies83) credited to the card here, so the log names it */
+  if(e.sn && (e.sn.phase === 'aim' || e.sn.phase === 'lock')){ intr85n(e, 'sentry_' + e.sn.phase, e.sn.t, 'bash'); e.sn.phase = 'recover'; e.sn.t = 0.8; n++; }
+  if(e.st && (e.st.phase === 'windup' || e.st.phase === 'beat')){ intr85n(e, 'stalker_' + e.st.phase, e.st.t, 'bash'); e.st.phase = 'recover'; e.st.t = STALKER.recover; n++; }
+  card85x85r('bash85r', 'intr', n);   /* the row's second field: 0 when nothing broke */
+}
+/* the root's clock, beside the stun's (updateEnemies83; dt is the enemies' own) */
+function rootTick85r(e, dt){
+  if(!e.rootAt85r) e.rootAt85r = [e.x, e.y];
+  e.rootT = Math.max(0, e.rootT - dt);
+  e.kb84p = null;
+  if(e.rootT > 0){ e.snareT = Math.max(e.snareT || 0, e.rootT); return; }
+  e.rootAt85r = null;
+  /* a held bat goes back to its circle (MINE) */
+  if(e.wr && e.wr.held85r){
+    const w = e.wr; w.held85r = false; w.res85n = null;
+    w.phase = 'circle'; e.diveT = 0;
+    w.t = BIRD85G.circle[0] + (BIRD85G.circle[1] - BIRD85G.circle[0])*Math.random();
+    tlog('dive_held', { kind: e.kind });
+  }
+}
+/* after the enemies' turn: a rooted body stands where the root caught it */
+function rootPin85r(){
+  for(const e of enemies){
+    if(!e.rootAt85r) continue;
+    if(!(e.rootT > 0) || e.dead){ e.rootAt85r = null; continue; }
+    e.x = e.rootAt85r[0]; e.y = e.rootAt85r[1];
+    if(e.vx) e.vx = 0; if(e.vy) e.vy = 0;
+  }
+}
+{
+  /* no displacement for a rooted body: every shove, both knockbacks (and their slides), the wall slam */
+  const shove0 = shoveEnemy; shoveEnemy = function(e){ if(e && e.rootT > 0) return; return shove0.apply(this, arguments); };
+  const kb0 = kb84p; kb84p = function(e){ if(e && e.rootT > 0) return; return kb0.apply(this, arguments); };
+  const hkb0 = herKb84r; herKb84r = function(e){ if(e && e.rootT > 0) return; return hkb0.apply(this, arguments); };
+  const slam0 = slamNow84p; slamNow84p = function(e){ if(e && e.rootT > 0) return; return slam0.apply(this, arguments); };
+  /* the enemies' turn, then the pin */
+  const ue0 = updateEnemies; updateEnemies = function(){ const r = ue0.apply(this, arguments); rootPin85r(); return r; };
+  /* the great bat's wind-up and dive hold while it is rooted (updateWraith, the circle, is part 3's: not touched) */
+  const uw0 = updateWraith83; updateWraith83 = function(e){
+    const w = e && e.wr;
+    if(w && e.rootT > 0 && (w.phase === 'windup' || w.phase === 'dive')){ w.held85r = true; return; }
+    return uw0.apply(this, arguments);
+  };
+}
+/* v0.85r §3 — THE BATS' DIVE GATE (2026-10-10). Names ending 85r are new.
+   YOURS (the v0.85q playtest §9.3, §10.3): "free bats only, formations exempt, N = 3 a dial"; the Roost's shapes untouched; the tide's
+   bat beat stays. Before a FREE great bat (no e.form) leaves its circle for a wind-up, updateWraith counts the great bats now in a
+   wind-up or a dive; at WRAITH_GATE or more it takes the no-line path (w.t = 0.4: it circles on and looks again) and logs
+   wraith_gated { n } once per look so held back.
+   MINE: every great bat in a wind-up or a dive counts toward the gate, a formation's or a free one's (a Roost Wheel diving keeps the
+   free bats circling); a formation bat itself is never gated (updateWraith hands it to updateWraith83 before the gate). A formation
+   bat that has dived once is a free bat from then on (e.form is cleared at its lock, as before) and is gated like any other.
+   MINE: the gate is looked at only once the bat has a clear line, so a wraith_gated row is always a dive held back (not a dive
+   the wall stopped anyway). FACT: a held bat looks again every 0.4 s, so the log gets about 2.5 rows a second per held bat.
+   The dial: wrGate85r, BATS DIVING AT ONCE, SHARED tab, group THE BATS, def 3, 0..8 (0 = off), read through F84p() like the
+   roost's: a studio run's side B plays the dial, every other run the shipped default. */
+const WRAITH_GATE85R = 3;   /* the shipped default (FEEL84P_DEF.wrGate85r is the same) */
+function wraithGate85r(){
+  const F = typeof F84p === 'function' ? F84p() : null, v = F ? F.wrGate85r : undefined;
+  return typeof v === 'number' && isFinite(v) ? v : WRAITH_GATE85R;
+}
+function wraithBusy85r(){ let n = 0; for(const x of enemies) if(x.kind === 'wraith' && x.hp > 0 && x.wr && (x.wr.phase === 'windup' || x.wr.phase === 'dive')) n++; return n; }
+/* true when this free bat must wait: the gate is on and N or more great bats are already winding up or diving (logged) */
+function wraithGated85r(e){
+  if(e.form) return false;
+  const N = wraithGate85r(); if(!(N > 0)) return false;
+  const n = wraithBusy85r(); if(n < N) return false;
+  tlog('wraith_gated', { n });
+  return true;
+}
+/* v0.85r §4 — THE SISTER BLADES' SPECIAL TO HADES II'S FILES (YOURS, 2026-10-10: "match the Hades II files"; `docs/handoffs/HANDOFF — v0.85r.md`
+   §4). FACT (PlayerWeapons.sjson WeaponDaggerThrow l.2315–2400, WeaponData_Dagger.lua l.366–392, EffectData.lua l.1468–1501): the volley's
+   stages are 2 blades at 0.32 s, then +0.14 each (3 at 0.46, 4 at 0.60, 5 at 0.74); after the volley 16 frames locked, 23 cancelable,
+   feet 30 frames (0.5 s) cancelable (K85Q.voLock / voCancel / voFeet). */
+/* the stage a hold of `chg` seconds has reached: 0 below the first (a plain throw), then 1..4 (2..5 blades), capped at 4 */
+function blStage85r(chg, F){
+  const S1 = Math.max(0.01, F.blVoStage1), SN = Math.max(0.01, F.blVoStageN), c = (chg || 0) + 1e-9;
+  return c < S1 ? 0 : Math.min(4, 1 + Math.floor((c - S1)/SN));
+}
+/* the charge's fill over him (0..1): the stage reached plus the way to the next, a quarter a stage (the same rule as blStage85r) */
+function blFill85r(M, F){
+  const S1 = Math.max(0.01, F.blVoStage1), SN = Math.max(0.01, F.blVoStageN), st = M.stage || 0;
+  const fr = st >= 4 ? 0 : st === 0 ? (M.chg || 0)/S1 : ((M.chg || 0) - S1 - (st - 1)*SN)/SN;
+  return Math.min(1, (st + Math.max(0, Math.min(1, fr)))/4);
+}
+/* after the volley (MINE: counted from the release, the moment the first blade leaves, as the tap's is from the throw): to voLock nothing ends
+   the feet's lock and no attack; the attack is back at voCancel (atkCD); the feet stay locked to voFeet unless a dash or a sprint starts
+   (from any time, honoured once voLock has passed, the tap's rule) or an attack goes off (from voCancel). An ECHO's half volley takes no
+   recovery (it is a card's replay, not his release). */
+function blVoRec85r(){
+  P1.vr85r = { t: 0, t0: t84v(), cancel: false };
+  P1.atkCD = Math.max(P1.atkCD || 0, K85Q.voCancel);
+}
+function blVoRecTick85r(dt){
+  const R = P1.vr85r; if(!R) return;
+  R.t += dt;
+  if(P1.dashT > 0 || P1.sprint || (R.t >= K85Q.voCancel - 1e-6 && (P1IN.edge('atk') || (P1.bl85q && P1.bl85q.t0 >= R.t0)))) R.cancel = true;
+  if(R.t >= K85Q.voFeet - 1e-6) P1.vr85r = null;
+}
+/* his feet after the volley (blMove85q): true = locked */
+function blVoFeet85r(){
+  const R = P1.vr85r;
+  if(R && (R.t < K85Q.voLock - 1e-6 || (R.t < K85Q.voFeet - 1e-6 && !R.cancel))) return true;
+  return !!P1.bv85q && !(R && R.cancel && R.t >= K85Q.voLock - 1e-6);   /* the blades still leaving his hands (a long studio gap): a dash or sprint frees him too */
+}
+/* ==================================================================================================================================
+   v0.85r §6 — THE SIDE VEINS' RANDOM RUNGS (YOURS, 2026-10-10: "all levels"; "plain sorted draws"; "score depends on the difficulty";
+   "harder side veins reward more score and more XP"). Names ending 85r are new.
+   THE DEAL: every side room, on every level, once the map's gates have passed (genDungeonBody85i, after buildFrom and its event-room
+   steal), draws three tiers uniform on 1..5 (Math.random) and SORTS them, so a vein never gets easier board to board (weakly
+   increasing by construction; P(all three equal) 4 %). room.tiers = [a, b, c]; room.rungs = the minis' spec for each tier
+   (miniLadderSpec(t - 1): tiers 1-3 the level's own rungs, 4-5 deepSpec's ONE MORE boards). The practice ore keeps its fixed ladder
+   (no tiers); the ore-backs and the Motherlode are rocks, not side rooms, and are untouched.
+   THE PAY: a board pays its tier — XP.mini[t - 1] off the depths, XP.side83[t - 1] in the depths (the x2 kept); the score's row is
+   SIDE85R.scoreK (70) x the sum of the three tiers of every cleared vein (1-2-3 = 420, 4-5-5 = 980; the mean vein ~ 630, near 600).
+   ================================================================================================================================== */
+/* FACT: the minis' five tiers; YOURS: score by the tiers (MINE: 70 a tier, so the mean vein ~ the old 600). A `var`, on purpose: the boot's own map
+   (genDungeon() at the top of the script) is made before this block runs, while the ladders are not yet defined — SIDE85R is undefined then
+   and that map is not dealt (startRun makes every played map again, and sideTiersEnsure85r is the net) */
+var SIDE85R = { tiers: 5, scoreK: 70, flat: 600 };
+/* one vein's deal: three uniform draws on 1..SIDE85R.tiers, sorted (YOURS: plain sorted draws) */
+function dealSideTiers85r(){
+  const u = () => 1 + Math.min(SIDE85R.tiers - 1, Math.floor(Math.random()*SIDE85R.tiers));
+  return [u(), u(), u()].sort((a, b) => a - b);
+}
+/* a side room takes its deal: the tiers and the boards' specs (the minis' spec for each tier, read now, once — as a mini's is) */
+function dealRoom85r(room, tiers){
+  room.tiers = (tiers || dealSideTiers85r()).slice();
+  room.rungs = room.tiers.map(t => miniLadderSpec(t - 1));
+  return room;
+}
+/* every side room of the map just made (the practice ore never: it is the hall's, with its own ladder) */
+function dealSides85r(){
+  if(!SIDE85R) return;   /* the boot's map, made before this block ran */
+  for(const r of sideRooms) if(!r.practice && !r.mini && !r.rock) dealRoom85r(r);
+  MAZE.sideTiers85r = sideRooms.filter(r => r.tiers).map(r => r.tiers.join(''));
+}
+/* the safety net: a side room that reached a board with no deal (a map the generator gave up on keeps its last attempt) is dealt here */
+function sideTiersEnsure85r(room){
+  if(room && !room.tiers && !room.practice && !room.mini && !room.rock && typeof sideRooms !== 'undefined' && sideRooms.includes(room)) dealRoom85r(room);
+  return room;
+}
+/* board i of a dealt vein: its tier's spec, re-dealt up to 4 times if empty at the deep tiers (the minis' degenerate guard) */
+function sideGen85r(room, i){
+  const sp = room.rungs[Math.min(i, room.rungs.length - 1)], deep = !!(room.tiers && room.tiers[i] >= 4);
+  let b = null;
+  for(let k = 0; k < (deep ? 4 : 1) && (!b || b._degenerate); k++) b = genPanelFromSpec(sp, !!sp.hard);
+  return b;
+}
+/* the tier of the board on screen at a dealt vein (null where there is no deal) */
+function sideTier85r(room){ return room && room.tiers ? room.tiers[Math.min(room.solved || 0, room.tiers.length - 1)] : null; }
+/* the score's row: 70 x the tiers' sum of every cleared, dealt vein; a cleared vein with no deal (only on a map the generator gave up on)
+   pays the old flat 600 */
+function sideTierSum85r(){ let s = 0; for(const r of sideRooms) if(r.done && !r.practice && r.tiers) s += r.tiers.reduce((a, t) => a + t, 0); return s; }
+function sideVeinsScore85r(){
+  const dealt = sideRooms.filter(r => r.done && !r.practice && r.tiers).length;
+  return SIDE85R.scoreK*sideTierSum85r() + Math.max(0, (G.sideOre || 0) - dealt)*SIDE85R.flat;
+}
+/* the end screen's row: SIDE VEINS, the count and the tiers' sum (MINE) */
+function sideVeinsLabel85r(){ const s = sideTierSum85r(); return 'side veins  ×' + (G.sideOre || 0) + (s ? ' · tiers ' + s : ''); }
+/* the summary: the dealt triples, with the room ids (and how far each got) */
+function sideTiers85r(){
+  return sideRooms.filter(r => r.tiers && !r.practice).map(r => ({ room: r.idx, roomId: r.roomId, tiers: r.tiers.slice(), solved: r.solved || 0, done: !!r.done }));
+}
+/* the telemetry: solve seconds and mechanic counts keyed by the slot (1, 2, 3 — as before) AND by the tier (t1 .. t5) */
+function sideRungSec85r(){
+  const o = {};
+  for(const e of TELEM) if(e.type === 'side_solve' && e.rung != null){
+    (o[e.rung] = o[e.rung] || []).push(e.timeSec);
+    if(e.tier != null) (o['t' + e.tier] = o['t' + e.tier] || []).push(e.timeSec);
+  }
+  for(const k of Object.keys(o)) o[k] = { n: o[k].length, sec: o[k], mean: +(o[k].reduce((a, b) => a + b, 0)/o[k].length).toFixed(1) };
+  return o;
+}
+function sideRungMech85r(){
+  const o = {};
+  for(const e of TELEM) if(e.type === 'side_stage_start'){
+    (o[e.rung] = o[e.rung] || []).push(e.panel.mech);
+    if(e.tier != null) (o['t' + e.tier] = o['t' + e.tier] || []).push(e.panel.mech);
+  }
+  for(const k of Object.keys(o)) o[k] = [...new Set(o[k])];
+  return o;
+}
+/* the minimap's pip (MINE: the pip's size by the tier): mmCrystal's shape, each standing spike as tall as its board's tier
+   (tier 1 x0.7 .. tier 3 x1.0 .. tier 5 x1.3); a vein with no deal draws mmCrystal itself */
+function mmCrystal85r(x, y, left, s, tiers, solved){
+  if(!tiers) return mmCrystal(x, y, left, s, 0);
+  ctx.beginPath(); ctx.moveTo(x - s, y + s*0.5); ctx.lineTo(x + s, y + s*0.5); ctx.lineTo(x + s*0.7, y + s*0.9); ctx.lineTo(x - s*0.7, y + s*0.9); ctx.closePath(); ctx.fill(); ctx.stroke();
+  const spikes = [[0, -1.7, 0], [-0.55, -1.1, -0.35], [0.6, -1.2, 0.3]];
+  for(let k = 0; k < 3; k++){ const [sx, hh, lean] = spikes[k];
+    if(k < left){ const t = tiers[Math.min((solved || 0) + k, tiers.length - 1)], m = 0.55 + 0.15*t;
+      ctx.beginPath(); ctx.moveTo(x + sx*s - s*0.3, y + s*0.5); ctx.lineTo(x + sx*s + lean*s*m, y + s*0.5 + (hh - 0.5)*s*m); ctx.lineTo(x + sx*s + s*0.3, y + s*0.5); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.moveTo(x + sx*s - s*0.3, y + s*0.5); ctx.lineTo(x + sx*s, y + s*0.1); ctx.lineTo(x + sx*s + s*0.3, y + s*0.5); ctx.stroke(); }
+  }
+}
+/* v0.85r §6 — THE SIDE VEIN'S MODEL (YOURS: the minis' gem marks on its seams; a shorter spent stump). A side vein in a run
+   (drawOreCrystal's opts.side85r, set at the call site for every side room but the practice ore) wears rock B's seams85r —
+   placed so the CHIPSETS.side85r bite k takes seam k's mark whole (MINE: positions found by a search over the chip polygons,
+   every mark up to the brilliant inside its chip with 0.02 units to spare, and 0.08 clear of the earlier bites) — and its
+   spent look is the stump NSIL.Bs. The Motherlode and the practice ore never set side85r: their rock B is v0.85q's. */
+function seamsOf85r(o){ const s = NSIL[o.sil]; return (o.side85r && s && s.seams85r) || seamsOf(o.sil); }
+/* v0.85r §7 — HER PICK CHAIN: SNAPPY (YOURS, 2026-10-10, 14:15: "snappy is the winner in the pickaxe swing sampler. let's go with that.")
+   The numbers live in CH85M (rec 0.15 / 0.18 / 0.32, feet 0.35 through every recovery, cancel 0.6); the cancel point is one line in
+   chTick85m's recovery branch. The studio's HER tab carries the chain's windup (x3), recovery (x3), window and cancel point (group
+   PICK · THE CHAIN, ids ending 85r, defaults = SNAPPY's); feelApply84p calls chDials85r(), which writes them into CH85M in a studio
+   run only (studio85(); side A reads FEEL84P_DEF = SNAPPY, side B the dials) and puts the shipped numbers back in every other run (as
+   the v0.85i sizes block reads its dials through sizeF85i). MINE: a recovery dial also sets that step's walk-through-recovery length
+   (feet[n].t), so she keeps walking through the whole recovery as the dial moves (SNAPPY's t equals its recovery). */
+function chDials85r(){
+  try { CH85M; } catch(e){ return; }   /* FACT: kitBegin85 runs feelApply84p at load, before CH85M is declared (its shipped numbers hold then) */
+  const C = CH85M, S0 = chDials85r.ship || (chDials85r.ship = { wind: C.wind.slice(), rec: C.rec.slice(), ft: C.feet.map(f => f.t), win: C.win, cancel: C.cancel });   /* the shipped numbers, taken at the first call (before any write) */
+  const F = studio85() ? F84p() : null;
+  for(let i = 0; i < 3; i++){
+    C.wind[i] = F ? F['chWind' + (i + 1) + '_85r'] : S0.wind[i];
+    C.rec[i] = F ? F['chRec' + (i + 1) + '_85r'] : S0.rec[i];
+    C.feet[i].t = F ? C.rec[i] : S0.ft[i]; }
+  C.win = F ? F.chWin85r : S0.win;
+  C.cancel = F ? F.chCancel85r : S0.cancel;
 }
 /* v0.84a §7 — THE DEV MENU AND THE BOT RUN (his rulings of 2026-09-29: F9 / a pad's SELECT on the main menu opens it, START
    stays the game's start button; a human press during a bot run does nothing; a bot run writes its telemetry, flagged, and
