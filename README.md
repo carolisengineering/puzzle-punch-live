@@ -3,8 +3,8 @@
 A smaller cut of Puzzle Punch: one level, no sampler material, no dev tooling.
 
 ## Where it came from
-Copied from the full project (`Puzzle-Punch`, the big repo). Now at commit `c155c19`, game v0.85q,
-md5 `076d5af2467aa1f483213866f57e2b90` (first cut: `93fc3cd`, v0.85m). That repo keeps the full history, the samplers, the harness, the telemetry and
+Copied from the full project (`Puzzle-Punch`, the big repo). Now at commit `445facc`, game v0.85v,
+md5 `d1b289e6296193a82137870aaf530314` (first cut: `93fc3cd`, v0.85m). That repo keeps the full history, the samplers, the harness, the telemetry and
 the design docs. This repo starts fresh and does not share git history with it.
 
 Fixes made over there do not flow here on their own. The way to carry a new version across is to take
@@ -54,7 +54,7 @@ It plays in full otherwise. Run logs go to the cloud instead; see Cloud telemetr
 
 The script copies the game file to `public/index.html` and deploys that, rebuilding `public/`
 from scratch each time so a deploy cannot ship a stale copy. Each deploy is labelled with the game
-version and commit (e.g. `PUZZLE PUNCH v0.85r @ d124267-dirty`), shown in the Firebase console under
+version and commit (e.g. `PUZZLE PUNCH v0.85v @ 7c3e1aa-dirty`), shown in the Firebase console under
 Hosting → Release history. `public/` is generated; it is
 gitignored and is not source. `firebase.json` deliberately has no catch-all rewrite — the
 helper routes must 404 for the game's offline path to work, and a rewrite would answer them
@@ -105,11 +105,11 @@ Tests: `npm test` (unit) and `npm run test:emulator` (rules and export; needs `b
 ## Level
 THE LIVING DEPTHS, alone. There is no antechamber: START on the setup screen descends straight
 into the mine (the walk out of the mouth, as the dev menu's runs do it), and START on the end screen
-returns to the setup screen. The game file after the trim: md5 `694f416583a1edfe7d7c442e369f14e2`.
+returns to the setup screen. The game file after the trim: md5 `d104c1ea4b83b2f31324102e8ddadb6a`.
 
 The other levels' code (castle, forest, desert, glacier, rainbow road, manor) is still in the file,
 unreachable. Pruning it is a later pass. The trim itself is `harness/live1_trim.mjs`; it runs
-against the version named in its `FROM_MD5` (now v0.85r) and stops if anything it expects is missing.
+against the version named in its `FROM_MD5` (now v0.85v) and stops if anything it expects is missing.
 
 ## Notes
 `docs/` holds this cut's build notes. The design docs, rulings and samplers stay in the big repo.
