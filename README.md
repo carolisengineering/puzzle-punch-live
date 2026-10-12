@@ -50,11 +50,11 @@ run logs are off: the game sees the `/highscore` 404, sets `telemOffline` and sa
 It plays in full otherwise. Run logs go to the cloud instead; see Cloud telemetry below.
 
     scripts/deploy.sh --serve    # preview on localhost:5002 against local emulators (needs Java)
-    scripts/deploy.sh            # ship it
+    scripts/deploy.sh            # ship it (only from a clean tree at a commit already on origin/main)
 
 The script copies the game file to `public/index.html` and deploys that, rebuilding `public/`
 from scratch each time so a deploy cannot ship a stale copy. Each deploy is labelled with the game
-version and commit (e.g. `PUZZLE PUNCH v0.85v @ 7c3e1aa-dirty`), shown in the Firebase console under
+version and commit (e.g. `PUZZLE PUNCH v0.85v @ fc43c27`), shown in the Firebase console under
 Hosting → Release history. `public/` is generated; it is
 gitignored and is not source. `firebase.json` deliberately has no catch-all rewrite — the
 helper routes must 404 for the game's offline path to work, and a rewrite would answer them
