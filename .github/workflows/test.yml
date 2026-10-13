@@ -1,0 +1,26 @@
+# Runs the unit and Firestore-rules tests on every pull request, so a break shows up before the merge
+# (deploy.yml only runs once a change is on main). Make this check required in Settings -> Branches.
+name: Test
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm run test:emulator

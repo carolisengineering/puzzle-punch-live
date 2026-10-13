@@ -26,7 +26,7 @@ LABEL="$VERSION @ $(git describe --always --dirty)"
 if [ "${1-}" = "--serve" ]; then
   # the emulators need Java; brew's openjdk is keg-only
   if [ -d /opt/homebrew/opt/openjdk/bin ]; then PATH="/opt/homebrew/opt/openjdk/bin:$PATH"; fi
-  exec npx -y firebase-tools emulators:start --only hosting,auth,firestore
+  exec npx firebase emulators:start --only hosting,auth,firestore
 fi
 
 if [ -n "$(git status --porcelain)" ]; then
@@ -40,4 +40,4 @@ if ! git merge-base --is-ancestor HEAD origin/main; then
 fi
 
 echo "deploying: $LABEL"
-exec npx -y firebase-tools deploy --only hosting,firestore:rules,firestore:indexes --message "$LABEL"
+exec npx firebase deploy --only hosting,firestore:rules,firestore:indexes --message "$LABEL"

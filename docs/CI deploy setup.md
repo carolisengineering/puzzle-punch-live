@@ -1,8 +1,12 @@
 # CI deploy setup
 
 `.github/workflows/deploy.yml` runs `scripts/deploy.sh` on every push to `main` (a merged PR is a
-push). It runs the unit tests first, then deploys Hosting plus Firestore rules and indexes. The
-release label comes out as `PUZZLE PUNCH v0.85v @ <sha>`, same as a manual deploy.
+push). It runs the unit and Firestore-rules tests first, then deploys Hosting plus Firestore rules
+and indexes. Pushes that only touch `docs/` or `*.md` do not deploy. The release label comes out as
+`PUZZLE PUNCH v<version> @ <sha>`, same as a manual deploy.
+
+`.github/workflows/test.yml` runs the same tests on every pull request, so a break shows before the
+merge. The CLI is pinned in `package.json` (`firebase-tools`), so a new release cannot break a deploy.
 
 It needs one secret: a service account key that may deploy. Set it up once.
 
@@ -39,5 +43,11 @@ normal path.
 
 ## Recommended: protect main
 
-Settings → Branches → require a pull request before merging, so nothing reaches `main` (and so
-production) without going through a PR.
+Settings → Branches → add a rule for `main`: require a pull request before merging, and require the
+`test` status check (from `test.yml`) to pass. Then nothing reaches `main` (and so production)
+without a PR and green tests. Until this is set, a direct push to `main` deploys.
+
+## Rolling back
+
+Firebase console → Hosting → Release history → the earlier release → Rollback. This is instant and
+does not touch Firestore rules; revert the commit on `main` for those.

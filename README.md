@@ -60,7 +60,7 @@ gitignored and is not source. `firebase.json` deliberately has no catch-all rewr
 helper routes must 404 for the game's offline path to work, and a rewrite would answer them
 with the page itself at `200`.
 
-First time on a new machine: `npx -y firebase-tools login`.
+First time on a new machine: `npm ci`, then `npx firebase login`.
 
 ## Cloud telemetry
 The deployed page also loads `live/cloud-telemetry.js`, which `scripts/deploy.sh` copies into

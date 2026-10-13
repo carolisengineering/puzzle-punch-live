@@ -6,6 +6,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+    paths-ignore: ['docs/**', '**.md']
   workflow_dispatch:
 
 concurrency:
@@ -20,12 +21,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # deploy.sh checks the commit is an ancestor of origin/main
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm test
+      - uses: actions/setup-java@v4   # the Firestore emulator needs it
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm run test:emulator
       - name: Write credentials
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
