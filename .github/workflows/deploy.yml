@@ -1,0 +1,43 @@
+# Deploys to Firebase Hosting (and Firestore rules and indexes) when a change lands on main.
+# Runs the same scripts/deploy.sh you run by hand, so the release label is the same.
+# One-time setup (service account and the FIREBASE_SERVICE_ACCOUNT secret): docs/CI deploy setup.md
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**.md']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # deploy.sh checks the commit is an ancestor of origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - uses: actions/setup-java@v4   # the Firestore emulator needs it
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm run test:emulator
+      - name: Write credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+      - run: scripts/deploy.sh
