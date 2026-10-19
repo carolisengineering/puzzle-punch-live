@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const FILE = 'PUZZLE PUNCH.html';
-const FROM_MD5 = '88dd5fc8d6f3dcbc24f408af75c0e6b7';   // v0.86h, as copied from Puzzle-Punch @ 1d92de0
+const FROM_MD5 = '0036df5047ba8a80e7497ef137209a48';   // v0.86h, as copied from Puzzle-Punch @ 14b4d16
 /* Earlier sources this same trim ran against, unchanged: v0.85m md5 77e86a3e01f4a1ea4c738cc63da54707
    (Puzzle-Punch @ 93fc3cd), the first LIVE 1 cut; v0.85o md5 c8beff8206ae9b044c7be17598178fc0
    (Puzzle-Punch @ 70e129f); v0.85q md5 076d5af2467aa1f483213866f57e2b90 (Puzzle-Punch @ c155c19); v0.85v md5 d1b289e6296193a82137870aaf530314 (Puzzle-Punch @ 445facc). v0.86a md5 ee849232ef0dddb832cf802e9c760cae (Puzzle-Punch @ a09adab). Point FROM_MD5 at the version in hand. */
