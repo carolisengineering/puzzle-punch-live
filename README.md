@@ -3,8 +3,8 @@
 A smaller cut of Puzzle Punch: one level, no sampler material, no dev tooling.
 
 ## Where it came from
-Copied from the full project (`Puzzle-Punch`, the big repo). Now at commit `3634482`, game v0.86c,
-md5 `1d92687c059027873245bf05538305fc` (first cut: `93fc3cd`, v0.85m). That repo keeps the full history, the samplers, the harness, the telemetry and
+Copied from the full project (`Puzzle-Punch`, the big repo). Now at commit `1d92de0`, game v0.86h,
+md5 `88dd5fc8d6f3dcbc24f408af75c0e6b7` (first cut: `93fc3cd`, v0.85m). That repo keeps the full history, the samplers, the harness, the telemetry and
 the design docs. This repo starts fresh and does not share git history with it.
 
 Fixes made over there do not flow here on their own. The way to carry a new version across is to take
@@ -105,11 +105,11 @@ Tests: `npm test` (unit) and `npm run test:emulator` (rules and export; needs `b
 ## Level
 THE LIVING DEPTHS, alone. There is no antechamber: START on the setup screen descends straight
 into the mine (the walk out of the mouth, as the dev menu's runs do it), and START on the end screen
-returns to the setup screen. The game file after the trim: md5 `d104c1ea4b83b2f31324102e8ddadb6a`.
+returns to the setup screen. The game file after the trim: md5 `f1a38b169507f9bacfda09999bb5bb44`.
 
 The other levels' code (castle, forest, desert, glacier, rainbow road, manor) is still in the file,
 unreachable. Pruning it is a later pass. The trim itself is `harness/live1_trim.mjs`; it runs
-against the version named in its `FROM_MD5` (now v0.86c) and stops if anything it expects is missing.
+against the version named in its `FROM_MD5` (now v0.86h) and stops if anything it expects is missing.
 
 ## Notes
 `docs/` holds this cut's build notes. The design docs, rulings and samplers stay in the big repo.
