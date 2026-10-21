@@ -4736,7 +4736,8 @@ const LIT_CORE_K = 0.55;
    lightAt84k() reads it, so what is drawn and what is refused cannot disagree. Each light is { x, y, r, k, dress }:
    full inside k*r, dim from there to r (k = 1 a FULL light, 0 a DIM one); `dress` is v0.76's flag that SECOND SIGHT
    reads, unchanged. Her lamp is not in it (hers is lightAt84k's first test: full to litRadius, dim to auraRadius).
-     his light — HER EMPTY LANTERN, the baseline light: 64 px, full to 42 (was his 60 px torch)
+     his light — HER EMPTY LANTERN, the baseline light: 170 px, full to 110 (v0.86i H §8: the same minimum as her dry lamp in the
+       Depths, so the fully lit part covers the body to the hair; v0.84k–v0.86h: 64 px, full to 42; before that his 60 px torch)
      SCOUT FLARE (any card light): today's radius, full to 55 % (MINE: today's clear share)
      LANTERN STRIKE (head and ribbon), the explosion flash, the ember trail, the Cinder's ground fire: dim, today's sizes
      the séance ring, a relit piece, the nursery: full (their own regions, as before)
@@ -4745,7 +4746,7 @@ const LIT_CORE_K = 0.55;
        ore throws no light
      the exit's glow 95 and a valve 45: dim · a chest 55 and the daylight out of the cave mouth 150: FULL
    BURST LAMP's flash stays outside the rule (a flash). The eclipse's disc and the squall's band still void every light. */
-const LIGHT84K = { his: 64, hisFull: 42, flareFull: 0.55, mainOre: 550, mainOreElse: 110, side: 150, mother: 150, mini: 45, shell: 45 };   /* v0.84o §4: mini 90 -> 45, side 220 -> 150, shell 90 -> 45, the Motherlode 220 -> 150 (YOURS) */
+const LIGHT84K = { his: 170, hisFull: 110, flareFull: 0.55, mainOre: 550, mainOreElse: 110, side: 150, mother: 150, mini: 45, shell: 45 };   /* v0.84o §4: mini 90 -> 45, side 220 -> 150, shell 90 -> 45, the Motherlode 220 -> 150 (YOURS) */   /* v0.86i H §8 (YOURS, 2026-10-19: "The minimum light radius around us (when her oil is depleted and his baseline) should be large enough to fully light our characters, at least." "The players should get the same minimum light radius.") his 64 -> 170, hisFull 42 -> 110: fully lit to 110, which climbs 74 screen px over his feet at 1.35, over the heads (68-74); at 42 it reached 28, the body dim, the head dark. The sentry's light reads these two and follows */
 /* an ore's light: its radius in equal steps of `of` boards, `solved` of them done, to nothing */
 function oreLight84k(R, solved, of){ return of > 0 ? Math.max(0, R*(1 - (solved || 0)/of)) : 0; }
 function mainOreLight84k(){ return oreLight84k(big84k() ? LIGHT84K.mainOre : LIGHT84K.mainOreElse, G.stageIdx || 0, 3); }
@@ -12546,9 +12547,19 @@ let FIREFLY_N = 260;                   // v0.31: map-wide firefly count, live-tu
    100 her minimum light sat EXACTLY on the spawn floor. At 76 there are 44 px of ground that is legal to
    spawn on and impossible to see. That is the intended half of this change, not an oversight — bodies now
    arrive out of the dark a stride away at low oil. SPAWN_FLOOR_MIN is the dial if it plays too mean; the
-   radius is not. */
-const OIL_MAX = 100, LIGHT_DRY = 64, LIGHT_BASE = 76;
-const P1_TORCH = 64;   /* v0.84k §4: HER EMPTY LANTERN — his light is the baseline light, LIGHT_DRY's 64 px (was 60; full to 42, LIGHT84K) */                                        // v0.78: his default light, 78 -> 60. It was a bare literal in the darkness pass since v0.15; it has a name now.
+   radius is not.
+   v0.86i H §8 — THE MINIMUM LIGHT COVERS THE BODIES (YOURS, 2026-10-19: "The minimum light radius around us (when her oil is depleted and his baseline) should be large enough to fully light our characters, at least." "The players should get the same minimum light radius."): LIGHT_DRY 64 -> 85.
+   In the Depths her dry lamp is 85 x lightK86() 2.0 = 170, fully lit to x 0.65 = 110 — his light's numbers too (P1_TORCH,
+   LIGHT84K.his / hisFull 170 / 110): one minimum for both. A fully lit 110 climbs 74 screen px over the feet at the camera's 1.35,
+   over the heads' drawn top at 68-74 (v0.86h's 64 lit 128 / 83 there: to 56 px, her head in the dim ring). Outside the Depths
+   lightK86() is 1, so a dry lamp there is 85 / 55 (MINE: only the Depths are played). The spawn floor moves with it: spawnFloor()
+   at her dry lamp is max(120, 170 + 20) = 190 (was 148).
+   AND THE OIL'S LINE STARTS THERE: LIGHT_BASE 76 -> 85 = LIGHT_DRY (YOURS, during the build: "oil at 0 = minimum radius (the radius I chose before the build to keep the player models lit), oil full = the max radius as it is in the game now. for oil between 0 and max, linearly interpolated between the min and max.").
+   Her radius starts at the empty lamp's at oil 0+ and grows with every drop, linearly, to the same full tank (LIGHT_MAX 345);
+   LIGHT_PER_OIL re-derives 2.69 -> 2.6 on its own; oil 50 is 215 (was 210.5) before the Depths' x 2. v0.78's "a dry lamp
+   should be meaningfully worse than one drop of oil" no longer holds: one drop is 85 + 2.6. */
+const OIL_MAX = 100, LIGHT_DRY = 85, LIGHT_BASE = 85;   /* v0.86i H §8: LIGHT_DRY 64 -> 85 (the Depths: 170, fully lit to 110); LIGHT_BASE 76 -> 85, the oil's line from the empty lamp's radius (YOURS) */
+const P1_TORCH = 170;   /* v0.86i H §8 (YOURS, 2026-10-19: "The minimum light radius around us (when her oil is depleted and his baseline) should be large enough to fully light our characters, at least." "The players should get the same minimum light radius.") 64 -> 170, his light's whole radius as LIGHT84K.his (full to 110), the dry lamp's in the Depths; a piece's "seen" test and threadLit read it. v0.84k §4 had it LIGHT_DRY's 64 (was 60; full to 42) */                                        // v0.78: his default light, 78 -> 60. It was a bare literal in the darkness pass since v0.15; it has a name now.
 const LIGHT_MAX = 345;                                        // what a FULL tank is worth — v0.59: 460 -> 345 (75%, their call: the old ceiling pushed spawns so far out the first minutes felt empty)
 const LIGHT_PER_OIL = (LIGHT_MAX - LIGHT_BASE) / OIL_MAX;     // 3.6 — derived, never typed
 /* v0.43 — THE OIL WELLS (his wishlist item 2). The flasks are GONE: oil is
@@ -13478,7 +13489,7 @@ const ATK = {
      its danger is what it does to SPACE — the shield itself lives in
      shieldBlocks(). The windup is the opening: the shield drops to strike. */
   shieldbearer: { stop: 36, reach: 50, windup: 0.70, dmg: 10, recover: 1.6 },
-  brute:  { stop: 60, radius: 90, windup: 0.85, dmg: 12, recover: 0.70 },   // v0.35: kbMult (poise) removed   /* v0.84o §1: the slam 28 -> 12 (YOURS) */
+  brute:  { stop: 60, radius: 90, windup: 0.85, dmg: 10, recover: 0.70 },   // v0.35: kbMult (poise) removed   /* v0.84o §1: the slam 28 -> 12 (YOURS) */   /* v0.86i F §6 (YOURS, 14:18: "I'd be ok nerfing ore-back damage to 10 on the slam. The slams are supposed to be the big telegraphed damage. If we get hit by them it *should* really hurt.") the slam 12 -> 10 */
   /* v0.83 §6 — THE MOTHERLODE: the ore-back's circle slam, bigger (YOURS); the numbers are MINE (the sampler's r3e) */
   mother: { stop: 110, radius: 170, windup: 1.0, dmg: 22, recover: 2.4 },
   /* v0.37 — THE SKATER bites like a blob and is over faster, because on ice
@@ -13688,7 +13699,7 @@ const FX_COL = { swing:'#eaf4ff', dagger:'#bcd8ff', lunge:'#eaf4ff', charge:'#ff
    still stamped v0.35, so every desert telemetry file on disk is labelled as
    a build that predates the level it describes. Mislabelled telemetry is
    worse than none — it is a wrong answer to "when did this change". */
-const GAME_VERSION = 'PUZZLE PUNCH v0.86h';   /* v0.86h — the auto-aim of the charged moves as Hades II's: THE LONG BURST and THE PIERCE lock once at the charge's start and never at release, her charged slam's lock angle 75 (the staff Ω special's), the blades' volley locks at the press until stage 1 and draws its fan of aim lines */   /* v0.86g — THE UI from UI sampler 1 (the Hades bars, her lantern gauge, the shared XP gauge, the BOTTOM layout, the card strips at the edges, the board bottom right and clean with the ore's own mark, the minimap at 1.1 beside the clock with the new icons, the clock bar slim, the card screen's reroll on RB), auto-targeting like Hades, no effect ever drawn on a shadow, HOARFROST LIGHT in her dim ring only, the spore cap faster at stage 3, the computer's solve drawing the last edge */   /* v0.86f — THE PUZZLES (the board stops growing, the generator counts the solutions and rejects loose boards, the spread check), the special's aiming beam drawn live, the blind on the eyes, every rim from the sheet's frame, the off-screen bat arrows removed, the red flash visible, her cards under her bars and the minimap below, the board 22 px higher, STAGGERING BLOWS' text, the rarities in one place (BURNING LIGHT epic, HOARFROST LIGHT rare), the health digits on a plate, the puzzle panel's text cut back, every floor clock at the floor's aspect, the hot rim round the body and never the shadow, her lantern racks drawing the lanterns, the bats' fill, THE GILDED TITAN a giant of his own */   /* v0.86e — her charged slam holds as long as she wants (no auto-fire, with or without BEDROCK), pads 0-7, the bodies drawn standing on their point (the orbs, the lights, collision and hits at the feet), a spent side vein and floor mini drawn as floor, STAY DOWN's glint back, the exit's daylight from the arch, the far player's floor laid ahead of the split, her racks on the button, her pick pads drawing their picks and THE CRESCENT, the sheets exported on an empty stage */   /* v0.86d — THE CAMERA (FIXED at 1.35, the dead zone, the damped follow, LEAD 170, the split screen when they part, no room cameras; the Depths' run only), THE SCREEN (the full 1280 x 720 view, the minimap top right at 0.8 solid with no frame, the run clock top centre at 1.15, the level's name gone, the board bottom right at 0.8 only while a board is open), THE CAVE (the lattice circuit back, the rooms x 1.5, BULGED carving, MIXED formations), HER LIGHT x 2 (the spawns follow it), THE MODELS from Model review 5 (the minis 36, the side vein 170, the main vein 330, the wall mini's mark mid-ore, THE ORE CHEST, THE AMBER BOX), THE PRE-BAKE (build-time sprite sheets for the Depths cast, him and her, every state and death, loaded at boot and blitted; nothing baked in play), only what touches the screen drawn, plain strokes at the light / min tiers, behindVein and every see-through fade removed */   /* v0.86c — the QC round on his first v0.86b play: THE CAMERA back to 1.35 (the rooms and her light back to x 1), EVERY ORE CENTRED on its relic (the reach 48 from the rock's edge, the XP 44-76 from the drawn rock, the Motherlode's collision to its model), THE HUB'S VEIN a side vein, HER Y in the hub, EVERY FLOOR EFFECT through the 3D floor, THE MINIMAP fits the cave, THE END SCREEN's text */   /* v0.86b — THE MOVEMENT (the pace the same on the screen every way, the keys' and the d-pad's diagonals on the grid, every mover), THE DEPTHS CAVE (the ellipse circuit, cavern rooms, mixed formations, the main event room's layouts, the map taller for the route band, the doors of a cave room, the turned minimap), THE ORES (THE DOME: the floor mini 40, the wall mini 16 up, the side vein 201 x 45, the main vein 360 x 45; no silhouettes anywhere), THE 3D BODIES for him and her (the motion, down, the calls' poses, the Sister Blades; her lantern and pick in two styles; the hair at the mirror, two new styles), THE CALLS (eight, for both players), THE DEPTHS CAST AND THE PROPS in 3D, THE HUB (THE HOUSE BEHIND, the racks, the mirror, GOD MODE without records, the sleepers in 3D, the ores in tiers 1-5) */   /* v0.86a — the Motherlode's slam tell through the floor */   /* v0.86 — THE DEPTHS AT HADES (the floor squashed 0.5 and turned 45 degrees, the walls lifted 64, the near side see-through, THE WALL OPENS round a body behind it, the stick turned through the projection, the attacks' shapes on the floor, the rooms x 1.5, the camera 1.0, her light x 1.5, the spawner's reach 673; the Depths only, the other levels as before; THE DEPTHS' VIEW tab), THE OPENING in three rows (floor 3 / 4 / 5, cadence 9 / 8 / 7 s, the ore-back 36 / 31 / 26 s), BEDROCK (rare, hers: the slam's second tier, 220 x 53) with the slam 140 x 34 and its lock-on, THE ITEM BOX on the hold, HER LINE UNWINDS under a hit (damage / 3 steps, the whole line for two hits in 1.5 s, no words), THE SHIELDS' BLOCK (the shield breaks in the world, on her board and on the bar; one steel shape), the hurt edge on his view, no pick swing for a lost step, BURNING LIGHT rare on her lit centre */   /* v0.85v — THE DEPTHS SAMPLER in the dev menu (a DEPTHS SAMPLER row after FOREST SAMPLER: it asks the helper's /sampler/depths/which, its v14 route, and opens /sampler/depths, the newest PUZZLE_PUNCH_depths_playable_<n>.html in samplers\, in this tab, with its telemetry; from the folder, or with a helper from before v14, the row says so for 4 s, as the forest's). A run plays as v0.85u's */
+const GAME_VERSION = 'PUZZLE PUNCH v0.86i';   /* v0.86i — after his first v0.86h play: TEMPERED's shields stack to 3, SPIRIT LINK out of the pool, the big map's outline from its own canvas, the well and the formations covered by the walls, the Depths' formations at the art stage, the ore-back's slam 10, her slam's lock 40 and its full-charge tell, the minimum light 170 / 110 for both */   /* v0.86h — the auto-aim of the charged moves as Hades II's: THE LONG BURST and THE PIERCE lock once at the charge's start and never at release, her charged slam's lock angle 75 (the staff Ω special's), the blades' volley locks at the press until stage 1 and draws its fan of aim lines */   /* v0.86g — THE UI from UI sampler 1 (the Hades bars, her lantern gauge, the shared XP gauge, the BOTTOM layout, the card strips at the edges, the board bottom right and clean with the ore's own mark, the minimap at 1.1 beside the clock with the new icons, the clock bar slim, the card screen's reroll on RB), auto-targeting like Hades, no effect ever drawn on a shadow, HOARFROST LIGHT in her dim ring only, the spore cap faster at stage 3, the computer's solve drawing the last edge */   /* v0.86f — THE PUZZLES (the board stops growing, the generator counts the solutions and rejects loose boards, the spread check), the special's aiming beam drawn live, the blind on the eyes, every rim from the sheet's frame, the off-screen bat arrows removed, the red flash visible, her cards under her bars and the minimap below, the board 22 px higher, STAGGERING BLOWS' text, the rarities in one place (BURNING LIGHT epic, HOARFROST LIGHT rare), the health digits on a plate, the puzzle panel's text cut back, every floor clock at the floor's aspect, the hot rim round the body and never the shadow, her lantern racks drawing the lanterns, the bats' fill, THE GILDED TITAN a giant of his own */   /* v0.86e — her charged slam holds as long as she wants (no auto-fire, with or without BEDROCK), pads 0-7, the bodies drawn standing on their point (the orbs, the lights, collision and hits at the feet), a spent side vein and floor mini drawn as floor, STAY DOWN's glint back, the exit's daylight from the arch, the far player's floor laid ahead of the split, her racks on the button, her pick pads drawing their picks and THE CRESCENT, the sheets exported on an empty stage */   /* v0.86d — THE CAMERA (FIXED at 1.35, the dead zone, the damped follow, LEAD 170, the split screen when they part, no room cameras; the Depths' run only), THE SCREEN (the full 1280 x 720 view, the minimap top right at 0.8 solid with no frame, the run clock top centre at 1.15, the level's name gone, the board bottom right at 0.8 only while a board is open), THE CAVE (the lattice circuit back, the rooms x 1.5, BULGED carving, MIXED formations), HER LIGHT x 2 (the spawns follow it), THE MODELS from Model review 5 (the minis 36, the side vein 170, the main vein 330, the wall mini's mark mid-ore, THE ORE CHEST, THE AMBER BOX), THE PRE-BAKE (build-time sprite sheets for the Depths cast, him and her, every state and death, loaded at boot and blitted; nothing baked in play), only what touches the screen drawn, plain strokes at the light / min tiers, behindVein and every see-through fade removed */   /* v0.86c — the QC round on his first v0.86b play: THE CAMERA back to 1.35 (the rooms and her light back to x 1), EVERY ORE CENTRED on its relic (the reach 48 from the rock's edge, the XP 44-76 from the drawn rock, the Motherlode's collision to its model), THE HUB'S VEIN a side vein, HER Y in the hub, EVERY FLOOR EFFECT through the 3D floor, THE MINIMAP fits the cave, THE END SCREEN's text */   /* v0.86b — THE MOVEMENT (the pace the same on the screen every way, the keys' and the d-pad's diagonals on the grid, every mover), THE DEPTHS CAVE (the ellipse circuit, cavern rooms, mixed formations, the main event room's layouts, the map taller for the route band, the doors of a cave room, the turned minimap), THE ORES (THE DOME: the floor mini 40, the wall mini 16 up, the side vein 201 x 45, the main vein 360 x 45; no silhouettes anywhere), THE 3D BODIES for him and her (the motion, down, the calls' poses, the Sister Blades; her lantern and pick in two styles; the hair at the mirror, two new styles), THE CALLS (eight, for both players), THE DEPTHS CAST AND THE PROPS in 3D, THE HUB (THE HOUSE BEHIND, the racks, the mirror, GOD MODE without records, the sleepers in 3D, the ores in tiers 1-5) */   /* v0.86a — the Motherlode's slam tell through the floor */   /* v0.86 — THE DEPTHS AT HADES (the floor squashed 0.5 and turned 45 degrees, the walls lifted 64, the near side see-through, THE WALL OPENS round a body behind it, the stick turned through the projection, the attacks' shapes on the floor, the rooms x 1.5, the camera 1.0, her light x 1.5, the spawner's reach 673; the Depths only, the other levels as before; THE DEPTHS' VIEW tab), THE OPENING in three rows (floor 3 / 4 / 5, cadence 9 / 8 / 7 s, the ore-back 36 / 31 / 26 s), BEDROCK (rare, hers: the slam's second tier, 220 x 53) with the slam 140 x 34 and its lock-on, THE ITEM BOX on the hold, HER LINE UNWINDS under a hit (damage / 3 steps, the whole line for two hits in 1.5 s, no words), THE SHIELDS' BLOCK (the shield breaks in the world, on her board and on the bar; one steel shape), the hurt edge on his view, no pick swing for a lost step, BURNING LIGHT rare on her lit centre */   /* v0.85v — THE DEPTHS SAMPLER in the dev menu (a DEPTHS SAMPLER row after FOREST SAMPLER: it asks the helper's /sampler/depths/which, its v14 route, and opens /sampler/depths, the newest PUZZLE_PUNCH_depths_playable_<n>.html in samplers\, in this tab, with its telemetry; from the folder, or with a helper from before v14, the row says so for 4 s, as the forest's). A run plays as v0.85u's */
 /* v0.78d — TWO LOOSE ENDS, both state outliving its context (v0.78b's stuck lean was the same shape): OPT.flourish never persisted, so an ACCESSIBILITY setting reset to FULL on every reload — it is saved under its own key now, apart from the records, so RESET RECORDS cannot wipe it, and read through a whitelist so a junk value cannot break the draw; and G.flourish was not run-scoped, so a flourish running as a run ended bled into the next run's opening frames. */
 /* v0.78c — THE TWO FLARE CARDS ARE RETIRED (his call): SCOUT FLARE and PARTING FLARE leave the reward pool, 35 cards to 33. Retired-but-recorded on the v0.75 pattern — the pool entry and the CARD_WHO row go, REW.scoutFlare / REW.dashFlare stay as keys reading false. THE EFFECT IS UNTOUCHED and dormant, his call, because more flare cards may come: CARD_LIGHTS, FLARE, dropFlare, playerMadeLightAt, the darkness holes, the spawn rule and the deeds' snuffing are all exactly as they were, and both effect sites still read their flag — a future card arms the whole machine by setting one boolean. */
 /* v0.78b — TWO BUGS OFF THE 09-06 DESERT RUN. (1) THE LIST STUCK ON HER: updateWhirlwind's ordinary release branch never cleared whirlWobble, so any release inside the wobble window left her leaning for the rest of the run — the release branch clears what it sets now, and p2Tilt will not lean her for a spin that is not running. (2) A MINI VEIN RE-DEALT ITS BOARD ON EVERY CLAIM (room 17: a 19-step board at 261.6 s, interrupted, a 17-step one at 295.0 s): pwLoadSide built a mini's panel unconditionally while every other vein sat behind `if(!room.panels)`. v0.76 §4 wrote that on purpose; his call is that a mini remembers like every other ore — and a board you can re-roll by walking away is an exploit, not a flavour. */
@@ -15959,7 +15970,7 @@ const REW = { dagHoming: false, dagBounce: false, auraBurn: false, resonant: fal
                /* v0.84n §2 */
                 // v0.40: dagBoomerang gone — the card became the weapon
               twinThrow: false,
-              spiritLink: false,   // v0.31: the cheat-death — see downPlayer
+              spiritLink: false,   // v0.31: the cheat-death — see downPlayer   /* v0.86i B §2: SPIRIT LINK is retired from the pool; this stays a key reading false, the switch a future card would throw */
               thorns: false, scent: false, lineWardCard: false, cartographer: false, giltHalo: false,   // v0.61: bloodChan is CUT with its card; lineWardCard — the per-ore charge is live
               pulse: false, wick: false, secondSight: false,
               lodestone: false,   // v0.75: the magnet (§3.5)
@@ -16318,8 +16329,7 @@ const REWARD_POOL = [
      instead. No floor — "the grim rescue is the point": a survivor at 10
      leaves you both at 5. There are no second copies of any reward, so the
      once is the card's whole life; when it fires, the link is shown burning. */
-  { id: 'spiritlink', rarity: 'rare', label: 'SPIRIT LINK', desc: 'when one of you would fall, the other\'s health is split between you instead. It recharges after a minute',   /* v0.84a §2 */
-    apply: () => { REW.spiritLink = true; } },
+  /* v0.86i B §2 (YOURS, 13:38: "We never want to take SPIRIT LINK. let's remove it from the reward pool.") SPIRIT LINK (rare, 'when one of you would fall, the other's health is split between you instead. It recharges after a minute') was here, and is RETIRED on the v0.78c pattern: the pool entry and its CARD_WHO row go, REW.spiritLink stays a key reading false. THE EFFECT IS UNTOUCHED and dormant: downPlayer still reads REW.spiritLink && !G.spiritLinkUsed, the recharge (CHIPDIAL84A.linkCd), the chip and the spirit_link log are as they were; a card that sets REW.spiritLink in its apply() and adds its CARD_WHO row arms it again. */
   /* v0.35 — PINNING SNARE in LOUD SNARE's slot (his call: "the stun should
      take the slot"). The baseline snare only slows now; this card restores
      the old full stop, at LOUD SNARE's cooldown price. */
@@ -16348,7 +16358,7 @@ const REWARD_POOL = [
      that regrows SHIELD_REGROW seconds after it breaks; a mechanic that
      scales with run length instead of arithmetic spent in one hit. */
   { id: 'shield', rarity: 'rare',  label: 'HEART SHIELD',   desc: '+1 shield for each of you — a shield blocks one hit, and regrows 25 seconds after it breaks',
-    apply: () => { REW.shieldRegen = true; P1.shield = Math.max(1, P1.shield||0); P2.shield = Math.max(1, P2.shield||0); } },
+    apply: () => { REW.shieldRegen = true; P1.shield = Math.min(SHIELD_MAX86I, Math.max(1, P1.shield||0)); P2.shield = Math.min(SHIELD_MAX86I, Math.max(1, P2.shield||0)); } },   /* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") capped at SHIELD_MAX86I (MINE); its rule as it was, out of the pool since v0.85k */
   /* v0.61 — OIL CACHE IS CUT (their call: "not fun or interesting"). +40
      oil on the spot was the last flat-arithmetic card in the pool. */
   /* v0.20 — reworked from a flat 0.42→0.34 ("just a numbers tweak" — his
@@ -16464,7 +16474,7 @@ const CARD_WHO = {
   backdraft: 'hers', swell: 'hers', flame: 'hers',
   wick: 'hers', quarry: 'hers', ward: 'hers', resonant: 'hers', gilthalo: 'both', hotspot: 'hers', deepthought: 'hers',   /* v0.84n §2 */   /* v0.84o §10 */
   emberdash: 'hers', venom: 'hers', frostlight: 'hers',
-  spiritlink: 'both', shield: 'both', wind: 'both',
+  shield: 'both', wind: 'both',   /* v0.86i B §2 (YOURS, 13:38: "We never want to take SPIRIT LINK. let's remove it from the reward pool.") the spiritlink row (both) retired with its card */
   spillage: 'hers',   // v0.81
   secondsight: 'both', ariadne: 'both', flowing: 'hers',   // v0.75: CARTOGRAPHER -> ARIADNE'S THREAD, SCENT OF ORE -> FLOWING OIL (hers)
   lodestone: 'both', dust: 'both'   // v0.75
@@ -23471,7 +23481,7 @@ function updatePlayers83(dt){
     if(REW.shieldRegen && !p.downed && p.shieldRegenT != null){
       p.shieldRegenT -= dt;
       if(p.shieldRegenT <= 0){
-        p.shieldRegenT = null; p.shield = 1;
+        p.shieldRegenT = null; p.shield = Math.min(SHIELD_MAX86I, (p.shield || 0) + 1);   /* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") one charge back, capped (MINE); v0.35 set the count to one, which would take a stack down to one */
         RSTAT.shieldRegrows++;
         addFx(p.x, p.y, 'shieldpop', 0.4); SFX.ready();
         tlog('shield_regrow', {who: p.name});
@@ -26792,7 +26802,7 @@ function drawEventRooms(){
        RELIC85S.openT = 2 s after the open (c.openedT), then nothing; every other chest (the elites', the Motherlode's) is the small box
        below, as before (MINE) */
     if(er.chest && er.kind === 'relic_chest'){ const c = er.chest;
-      if(!c.opened || (c.openedT != null && G.t - c.openedT >= 0 && G.t - c.openedT < RELIC85S.openT)){ const [sx, sy] = w2s(c.x, c.y); yq(c.y + 7, () => drawRelicChest85s(er, c, sx, sy, camS), 'chest', c.x, c); } }   /* v0.86 §1 (part 1a): 'chest', its x */
+      if(!c.opened || (c.openedT != null && G.t - c.openedT >= 0 && G.t - c.openedT < RELIC85S.openT)){ const [sx, sy] = w2s(c.x, c.y); yq(c.y + 7, () => drawRelicChest85s(er, c, sx, sy, camS), 'relic', c.x, c);   /* v0.86i D §4 (YOURS, 2026-10-19 13:38: "Some objects on the floor, such as oil wells are being drawn over walls") the relic chest as 'relic' (up to 120 tall as it opens); was 'chest' */ } }   /* v0.86 §1 (part 1a): 'chest', its x */
     else if(er.chest && CAST86B.gold(er)){ }   /* v0.86b part E: the small gold box in 3D where the view is turned (its flip and burst when opened) */
     else if(er.chest && !er.chest.opened){
       const c = er.chest;
@@ -34396,7 +34406,15 @@ for(const d of [
   { id: 'slWid286', label: 'SLAM · BEDROCK WIDTH', def: 53, lo: 10, hi: 240, step: 1, fmt: 'px', tip: 'with BEDROCK: the second tier\'s box across her facing (220 x 53 keeps tier 1\'s ratio)' },
   { id: 'slFront286', label: 'SLAM · BEDROCK FRONT TIME', def: 0.18, lo: 0, hi: 0.6, step: 0.02, fmt: 's', tip: 'with BEDROCK: the second tier\'s front runs its box in this long' },
   { id: 'slLockR86', label: 'SLAM · LOCK-ON REACH', def: 164, lo: 0, hi: 400, step: 4, fmt: 'px', tip: 'the slam turns her to the nearest body this far (+ its radius; + the second tier\'s extra length at tier 2); 0 is off' },
-  { id: 'slLockDeg86', label: 'SLAM · LOCK-ON ANGLE', def: 75, lo: 0, hi: 180, step: 2.5, fmt: 'n', tip: 'degrees either side of the aim (Hades\' AutoLockArcDistance; v0.86f: 25; v0.86g: 130, the Ω attack\'s), the aim her stick or her facing at rest; the staff Ω special\'s, WeaponStaffBall: 75 at 840; 0 is off' }   /* v0.86h B §3 (YOURS: "the omega special on the staff DOES have aim assist while it is being charged. I want her slam to work like that.") lockDeg 130 -> 75 either side, the staff Ω special's (WeaponStaffBall: 75 at 840); v0.86g had the Ω attack's 130 */   /* v0.86g A §4 (YOURS: "Yes, I am approving the auto-targeting change") was SLAM · LOCK-ON CONE, def 25, hi 60, step 5 */
+  { id: 'slLockDeg86', label: 'SLAM · LOCK-ON ANGLE', def: 40, lo: 0, hi: 180, step: 2.5, fmt: 'n', tip: 'degrees either side of the aim (Hades\' AutoLockArcDistance; v0.86f: 25; v0.86g: 130, the Ω attack\'s), the aim her stick or her facing at rest; the staff Ω special\'s, WeaponStaffBall: 75 at 840; 0 is off; v0.86i: 40 (YOURS: narrower; a first try, tune after a play)' }   /* v0.86i G §7a (YOURS: "I suspect the aim issue is because the angle for the aim assist is too big and so it feels too snappy." … "I think a narrower angle and a more clear visual should do it.") lockDeg 75 -> 40 either side (MINE, the handoff's first try; tune after a play); ore-backs stay targets, the lock live and following as v0.86h */   /* v0.86h B §3 (YOURS: "the omega special on the staff DOES have aim assist while it is being charged. I want her slam to work like that.") lockDeg 130 -> 75 either side, the staff Ω special's (WeaponStaffBall: 75 at 840); v0.86g had the Ω attack's 130 */   /* v0.86g A §4 (YOURS: "Yes, I am approving the auto-targeting change") was SLAM · LOCK-ON CONE, def 25, hi 60, step 5 */
+]) FEEL84P_DIALS.push({ g: 'SLAM', g2: 'SLAM', tab: 'HER', need: null, ...d });
+/* v0.86i G §7b (YOURS, 13:46: "she cannot easily tell when the it is fully charged … I don't see any visual effect other than the line filling in."): the tell at full on the HER tab's SLAM group (MINE: the ranges); written into
+   SLAMTELL86IG by slamTell86iG() (at the end of slamDials85t) in a studio run's side B, the shipped table in every other. OFF / 0 / 1: v0.86h's look */
+for(const d of [
+  { id: 'slFullRing86i', label: 'SLAM · FULL: THE RING', def: true, bool: true, fmt: 'onoff', tip: 'v0.86i: at full, a gold ring on the floor from her feet, 12 to twice the box\'s width in 0.25 s, fading (OFF: v0.86h)' },
+  { id: 'slFullFlash86i', label: 'SLAM · FULL: THE FLASH', def: true, bool: true, fmt: 'onoff', tip: 'v0.86i: at full, the box\'s outline white for 0.12 s, then gold (OFF: v0.86h)' },
+  { id: 'slHeldFill86i', label: 'SLAM · FULL: THE HELD FILL', def: 0.38, lo: 0, hi: 0.6, step: 0.02, fmt: 'n', tip: 'v0.86i: held at full, the box\'s fill alpha (+ the pulse, doubled: 0.38 - 0.54); v0.86i lead: 0.38 = 2 × v0.86h\'s 0.19 at full; the handoff\'s 0.22 assumed ~0.1 (0: v0.86h)' },
+  { id: 'slGlintK86i', label: 'SLAM · FULL: THE GLINT', def: 2, lo: 1, hi: 4, step: 0.25, fmt: 'x', tip: 'v0.86i: held at full, the pick\'s glint this many times v0.86h\'s (R = 5 + 5 x glint), drawn live over her body (1: v0.86h)' }
 ]) FEEL84P_DIALS.push({ g: 'SLAM', g2: 'SLAM', tab: 'HER', need: null, ...d });
 /* v0.86 §4 — HER LINE UNDER A HIT on the HER tab (group THE LINE UNDER A HIT, last; MINE: the ranges); a studio run only, written into
    LINE86 by lineDials86() from feelApply84p; outside a studio run the shipped four hold (his picks: div 3, combo 1.5, step 0.05, cap 0.4) */
@@ -34414,6 +34432,16 @@ function lineDials86(){
   const F = studio85() ? F84p() : null;
   for(const [k, id] of [['div', 'lnDiv86'], ['combo', 'lnCombo86'], ['step', 'lnStep86'], ['cap', 'lnCap86']]) LINE86[k] = F && typeof F[id] === 'number' ? F[id] : S0[k];
 }
+/* v0.86i E §5 (YOURS: "The obstacles (pillars, floor obstacles, etc.) in the depths should also get art for each of the depth's phases.") DEPTHS · FORMATIONS on THE DEPTHS' VIEW tab (MINE: the tab;
+   the handoff's group and ids). A studio run's side B only, written into FM86IE by fmDials86iE() from feelApply84p; outside a studio run
+   the shipped ON / ON / ON: the formations take the stage as the walls do. */
+ORDER84R.VIEW86.push('DEPTHS · FORMATIONS');
+for(const d of [
+  { id: 'fmStage86i', label: 'THE FORMATIONS AT THE ART STAGE', def: true, bool: true, fmt: 'onoff', tip: 'ON: the pillars, the boulders, the rubble, the stumps take the walls\' stone at each stage (the threads from 1, wet at 2, hot faces and the red edge at 4, the wash at 5); the crystal bed and the cracks only the wash. OFF: v0.86h\'s cold stone at every stage' },
+  { id: 'fmThread86i', label: 'THE THREADS (STAGE 1+)', def: true, bool: true, fmt: 'onoff', tip: 'the walls\' threads on the formations from stage 1 (along the cap\'s edge, down the faces: plum, red from 4, more at 5), and from stage 4 the walls\' red edge along each top edge, beating' },
+  { id: 'fmWash86i', label: 'THE WASH (STAGE 5)', def: true, bool: true, fmt: 'onoff', tip: 'at stage 5 the walls\' red wash over the formations (the crystal bed and the cracks too)' },
+  { id: 'fmSheenK86i', label: 'THE WET SHEEN, TIMES (STAGE 2+)', def: 4, lo: 0, hi: 6, step: 0.25, fmt: 'x', tip: 'the floor\'s wet sheen on the caps from stage 2, times the floor\'s own alpha (.07 / .10); 1 is the floor\'s, which does not read on a cap at play scale; 0 is none' }
+]) FEEL84P_DIALS.push({ g: 'DEPTHS · FORMATIONS', g2: 'DEPTHS · FORMATIONS', tab: 'VIEW86', need: null, ...d });
 const FEEL84P_DEF = (() => { const o = {}; for(const d of FEEL84P_DIALS) o[d.id] = d.def; return o; })();
 const HER84S = {   /* v0.84s: her side of the three shared presets (MINE: his numbers scaled down — her pick is a light weapon; HER WALL SLAM stays off, it may be a card) */
   hades: { hRumble: 0.5, hHs: 30, hHsKill: 50, hShHit: 0.05, hShKill: 0.1, hKbT: 0.12, hFlash: 0.6, hFlashT: 0.1, hBurst: 1.5, hNums: true, hHurtStop: 60, hHurtFlash: 0.5 },
@@ -34600,6 +34628,7 @@ function feelApply84p(){
   frostDials85s();   /* v0.85s §4: HOARFROST LIGHT's two dials into FROSTLIGHT_SLOW in a studio run; the shipped pair in every other */
   rooms86Dials();   /* v0.86 §1 (1b): THE DEPTHS' VIEW tab's rooms, light and STRIKES' GROUND dials into ROOMS86 / SG86 in a studio run's side B; the shipped numbers in every other */
   viewDials86();   /* v0.86 §1 (part 1a): THE DEPTHS' VIEW's dials into VIEW86 in a studio run; the shipped table (his picks) in every other */
+  fmDials86iE();   /* v0.86i E §5 (YOURS: "The obstacles (pillars, floor obstacles, etc.) in the depths should also get art for each of the depth's phases.") DEPTHS · FORMATIONS into FM86IE in a studio run's side B; the shipped ON / ON / ON in every other */
   if(W2 && W2.id === 'pick'){
     wr84r(W2.stats, 'kb', 'pkKb'); wr84r(W2.stagger, 'press', 'pkStagger');   /* v0.85r §7: the four old swing dials (duration, cooldown, reach, step) retired: the chain never read them */
     /* v0.85t §1a: the whirlwind's dials (PICK · THE WHIRLWIND) are off the HER tab and their writer is gone (the whirlwind is never reached; ORIG85 keeps their old numbers, so wr84r would have written undefined into W2.hold) */
@@ -38792,11 +38821,11 @@ function solve85k(){
     if(!T.node){ if(T.on) tlog('tempered_solve85k', { ...where, steps, orb: false, why: T.job ? 'searching' : (T.why || 'none') }); return; }
     const thru = path.some(q => q[0] === T.node[0] && q[1] === T.node[1]), gave = [], had = [];
     if(thru){ S.solvedThrough++;
-      for(const P of [P1, P2]){ if((P.shield || 0) > 0){ had.push(P.name); continue; } P.shield = 1; P.shield85k = true; gave.push(P.name); S.given[P === P1 ? 'him' : 'her']++; }
+      for(const P of [P1, P2]){ if((P.shield || 0) >= SHIELD_MAX86I){ had.push(P.name); continue; } P.shield = Math.min(SHIELD_MAX86I, (P.shield || 0) + 1); P.shield85k = true; gave.push(P.name); S.given[P === P1 ? 'him' : 'her']++; }   /* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") each of you below the cap gets one; had: those at the cap (v0.85k: each without a shield got one, "no stacking") */
       temperFxAdd85k(p, T, 'burst'); try{ SFX.shieldblk(); }catch(e){}
       if(gave.length) banner(gave.length === 2 ? 'TEMPERED — A SHIELD EACH' : 'TEMPERED — ' + gave[0] + ' SHIELDED', 1.6);
     } else { S.solvedSkip++; temperFxAdd85k(p, T, 'fade'); }
-    tlog('tempered_solve85k', { ...where, steps, orb: true, through: thru, extra: T.extra, Lmin: T.Lmin, gave, had });
+    tlog('tempered_solve85k', { ...where, steps, orb: true, through: thru, extra: T.extra, Lmin: T.Lmin, gave, had, now: { him: P1.shield || 0, her: P2.shield || 0 } });   /* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") now: the counts after the pay-out */
   }
 }
 /* ---------------------------------------------------------------- §4 SHATTER along the charged regular's line */
@@ -38971,25 +39000,28 @@ function temperFx85k(){
     temperShield85k(ctx, q.x - 22*v, q.y - 46*v, 0.5, true, 1); temperShield85k(ctx, q.x + 22*v, q.y - 46*v, 0.5, true, 1); ctx.restore();
   }
 }
+/* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") the cap: a player holds at most this many shield charges (TEMPERED's pay-out, HEART SHIELD, the regrow; the mark over the shoulder and the Hades bar's white caps show up to this many) */
+const SHIELD_MAX86I = 3;
 /* the shield on a body (was HEART SHIELD's white diamond): a small steel shield over the shoulder */
 function shieldMark85k(p, sx, sy){
   shieldBreakFx86(p, sx, sy);   /* v0.86 §5 F1 / F4 (YOURS): a shield that just broke, over the shoulder (drawn before the mark's own gate: it has no shield now) */
   if(!((p.shield || 0) > 0)) return;
-  const px = sx + 13*camS, py = sy - 30*camS;
-  temperShield85k(ctx, px, py, 0.62*camS, false, 0.5 + 0.5*Math.sin(G.t*2.4));
+  const px = sx + 13*camS, py = sy - 30*camS, n = Math.min(SHIELD_MAX86I, Math.max(1, Math.floor(p.shield))), br = 0.5 + 0.5*Math.sin(G.t*2.4);
+  for(let i = 0; i < n; i++) temperShield85k(ctx, px + i*9*camS, py, 0.62*camS, false, br);   /* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") one small shield per charge, up to SHIELD_MAX86I, in a row over the
+     shoulder, 9 x camS apart, the same size each; the first where v0.85k's one stood, the row growing outward (MINE). Was the one shield at px, py */
 }
 /* a blocked hit, for the log: whose shield, and whether her line was up */
 function shieldBlock85k(p){
   const drawing = p === P2 && boardOpen() && PW.path.length > 1 ? PW.path.length - 1 : 0;
   if(p.shield85k){ const S = temperStat85k(); S.blocked[p === P1 ? 'him' : 'her']++; if(drawing) S.blockedDrawing++; }
-  const out = { src: p.shield85k ? 'tempered' : 'other', drawing };
+  const out = { src: p.shield85k ? 'tempered' : 'other', drawing, left: p.shield || 0 };   /* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") left: the charges left after the hit (damagePlayer spent one before the log) */
   if((p.shield || 0) <= 0) p.shield85k = false;
   return out;
 }
 /* ---------------------------------------------------------------- §13 the card, in the pool; HEART SHIELD and LINE WARD out of it */
 {
   for(const id of ['shield', 'ward']){ const i = REWARD_POOL.findIndex(r => r.id === id); if(i >= 0) REWARD_POOL.splice(i, 1); }   /* out of the pool (YOURS); their code stays */
-  REWARD_POOL.push({ id: 'tempered85k', label: 'TEMPERED', desc: 'her boards sometimes show a steel shield. If she solves with her line through it, each of you gets a shield (one hit)',
+  REWARD_POOL.push({ id: 'tempered85k', label: 'TEMPERED', desc: 'her boards sometimes show a steel shield. If she solves with her line through it, each of you gets a shield (up to 3)',   /* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") the card's text: "(up to 3)", was "(one hit)" */
     apply: () => { REW.tempered85k = true; }, who: 'both', rarity: 'rare' });
   CARD_WHO.tempered85k = 'both'; REW.tempered85k = false;   /* v0.86f C §13: its RARITY84A line gone (the card says rare) */
   CARD84M.verb.tempered85k = 'board';
@@ -41448,7 +41480,7 @@ function frostDials85s(){
 /* v0.86e A §2 (YOURS, 10:08: "She should be able to hold it for as long as she wants"): auto is out of the table; nothing fires the
    charge but her release or her dash (the studio's slAuto85t dial is gone85, kept in the dials table by id) */
 const SLAM85T = { fill: 0.5, rec: 0.4, len: 140, wid: 34, landAt: 24, frontT: 0.12, walls: true, dmg: 8, kb: 2.4, stun: 0, hop: true, cracks: 7, dust: 1,
-  tier2: 0.6, len2: 220, wid2: 53, front2: 0.18, lockR: 164, lockDeg: 75 };   /* v0.86h B §3 (YOURS: "the omega special on the staff DOES have aim assist while it is being charged. I want her slam to work like that.") lockDeg 130 -> 75 either side, the staff Ω special's (WeaponStaffBall: 75 at 840); v0.86g had the Ω attack's 130 */   /* YOURS (his pick, 2026-10-11) */   /* v0.86g A §4 (YOURS: "Yes, I am approving the auto-targeting change") lockDeg 25 -> 130 either side of the aim (his staff's strikes); lockR 164 / 244 kept */   /* v0.86 §3: wid 90 -> 34 (YOURS, 21:03: "just as wide as her characters model"; her body's box is 34 wide); BEDROCK's tier 2 (tier2 s past full, len2 x wid2, front2 s: §3, ASK 7 settled 220 x 53); the lock-on (lockR = landAt + len, + len2 - len at tier 2; lockDeg either side of the stick; 0 is off: YOURS, 21:55) */
+  tier2: 0.6, len2: 220, wid2: 53, front2: 0.18, lockR: 164, lockDeg: 40 };   /* v0.86i G §7a (YOURS: "I suspect the aim issue is because the angle for the aim assist is too big and so it feels too snappy." … "I think a narrower angle and a more clear visual should do it.") lockDeg 75 -> 40 either side (MINE, the handoff's first try; tune after a play); ore-backs stay targets, the lock live and following as v0.86h */   /* v0.86h B §3 (YOURS: "the omega special on the staff DOES have aim assist while it is being charged. I want her slam to work like that.") lockDeg 130 -> 75 either side, the staff Ω special's (WeaponStaffBall: 75 at 840); v0.86g had the Ω attack's 130 */   /* YOURS (his pick, 2026-10-11) */   /* v0.86g A §4 (YOURS: "Yes, I am approving the auto-targeting change") lockDeg 25 -> 130 either side of the aim (his staff's strikes); lockR 164 / 244 kept */   /* v0.86 §3: wid 90 -> 34 (YOURS, 21:03: "just as wide as her characters model"; her body's box is 34 wide); BEDROCK's tier 2 (tier2 s past full, len2 x wid2, front2 s: §3, ASK 7 settled 220 x 53); the lock-on (lockR = landAt + len, + len2 - len at tier 2; lockDeg either side of the stick; 0 is off: YOURS, 21:55) */
 var SLAMS85T = [];   /* every fired slam, for part 1b's drawing (the contract): pruned 3 s after its fire */
 const FRONTS85T = [];   /* the fronts still running: { entry, d, lx, ly, pend: [{ o, ore, mini, at }], dealt, done } (1a's own) */
 Object.assign(RSTAT, { slams85t: 0, slamHits85t: 0, slamOres85t: 0 });   /* the summary's slams / slamHits / slamOres (resetRewards zeroes them a run) */
@@ -41476,7 +41508,7 @@ function updateSlam85t(dt, legs){
     const t = G.t - S.t0, d = slamFace85t();
     S.face = d; S.lx = P2.x + d[0]*T.landAt; S.ly = P2.y + d[1]*T.landAt;
     S.k = Math.min(1, t/Math.max(0.01, T.fill));
-    if(!S.full && t >= T.fill - 1e-6){ S.full = true; S.k = 1; S.fullAt = G.t; SFX.ready(); }   /* the "let go now" sound, Descura's */
+    if(!S.full && t >= T.fill - 1e-6){ S.full = true; S.k = 1; S.fullAt = G.t; SFX.ready(); slamHook85t('full', S); }   /* v0.86i G §7b (YOURS: "she cannot easily tell when the it is fully charged … I don't see any visual effect other than the line filling in.") the ring's hook, once a charge */   /* the "let go now" sound, Descura's */
     slamTierStep86(S, t);   /* v0.86 §3: BEDROCK's second tier (YOURS) */
     if(!legs || P2.downed) slamCut85t(P2.downed ? 'down' : 'legs');
     else if(!held){ if(S.full) slamFire85t('release'); else slamCut85t('short'); }
@@ -41594,6 +41626,7 @@ function slamDials85t(){
               tier2: 'slTier286', len2: 'slLen286', wid2: 'slWid286', front2: 'slFront286', lockR: 'slLockR86', lockDeg: 'slLockDeg86' };   /* v0.86 §3 */
   for(const k of Object.keys(S0)){ const id = M[k], v = F && id ? F[id] : undefined;
     SLAM85T[k] = v === undefined ? S0[k] : typeof S0[k] === 'boolean' ? !!v : +v; }
+  slamTell86iG();   /* v0.86i G §7b: the tell's four dials into SLAMTELL86IG, the same way (a studio run's side B; the shipped table in every other) */
 }
 /* v0.85t §1b — HER CHARGED SLAM: THE PICTURE (handoff §1 "The picture"; YOURS 2026-10-10: "I thought the hop animation was cool. keep it";
    his pick 2026-10-11: hop true, cracks 7, dust 1, shake 0). Ported from the sampler (harness/slam1/inner.js: pose, floorMine, worldMine,
@@ -41661,6 +41694,7 @@ function slamFx85t(kind, arg){
       const l = E ? Math.hypot(E.fx || 0, E.fy || 0) || 1 : 1;
       slamBurst85t(x, y, E ? [(E.fx || 0)/l, (E.fy || 0)/l] : [0, 0], o && o.mini ? 0.8 : 1); }
     else if(kind === 'cancel') SLAMV85T.n.cancels++;
+    else if(kind === 'full') slamFull86iG(arg);   /* v0.86i G §7b (i): THE RING, born at her feet (secG_add.js) */
   } catch(e){ slamErr85t(e); }
 }
 /* ---- the particles: born on G.t, moved by the drawn frames' G.t step ---- */
@@ -41713,11 +41747,12 @@ function slamFloor85t(){
     const fl86 = two && Q86.t2At != null ? Math.max(0, 1 - (G.t - Q86.t2At)/0.3) : 0;   /* tier 2's flash: the box white, 0.3 s */
     slamInFrame85t(x0, y0, d, L, W, c => {
       if(fl86 > 0){ c.save(); c.globalAlpha = 0.55*fl86; c.fillStyle = '#fffbe8'; slamBoxPath85t(c, W, L); c.fill(); c.restore(); }
-      c.globalAlpha = 0.07 + 0.12*k + 0.08*pul; c.fillStyle = GOLD85T; slamBoxPath85t(c, W, L*k); c.fill();
-      c.globalAlpha = full ? 0.75 + 0.25*pul : 0.25 + 0.4*k; c.strokeStyle = full ? '#ffe9a8' : GOLD85T; c.lineWidth = full ? 2.4 : 1.6; if(!full) c.setLineDash([6, 5]); if(full){ c.shadowColor = GOLD85T; c.shadowBlur = 10 + 8*pul; }
+      c.globalAlpha = slamFill86iG(k, pul, full); c.fillStyle = GOLD85T; slamBoxPath85t(c, W, L*k); c.fill();   /* v0.86i G §7b (iii): held at full 0.38 + the pulse doubled; was 0.07 + 0.12*k + 0.08*pul */
+      c.globalAlpha = full ? 0.75 + 0.25*pul : 0.25 + 0.4*k; c.strokeStyle = full ? '#ffe9a8' : GOLD85T; if(slamFlash86iG(S)){ c.globalAlpha = 1; c.strokeStyle = '#ffffff'; RING86IG.n.flash++; }   /* v0.86i G §7b (ii): THE FLASH, white 0.12 s at full, then gold */ c.lineWidth = full ? 2.4 : 1.6; if(!full) c.setLineDash([6, 5]); if(full){ c.shadowColor = GOLD85T; c.shadowBlur = 10 + 8*pul; }
       slamBoxPath85t(c, W, L); c.stroke(); c.setLineDash([]); c.shadowBlur = 0;
       c.globalAlpha = 0.5 + 0.4*k; c.fillStyle = GOLD85T; c.fillRect(L*k - 1, -W/2, 2, W); });
   }
+  slamRings86iG();   /* v0.86i G §7b (i): THE RING at full, on the floor with the box (secG_add.js) */
   /* each slam: the tint behind the front, the cracks it leaves (fixed to the floor, revealed as it passes), the ridge, the outline */
   for(const F of slamList85t()){ if(!F || !(G.t - F.t0 >= 0) || G.t - F.t0 > SLAMV85T.life) continue;
     const Fr = slamFrame85t(F), q = slamSt85t(F), after = Math.max(0, Fr.age - Fr.T), fade = 1 - U.pr(after, SLAMV85T.crackHold, SLAMV85T.crackFade);
@@ -41805,7 +41840,7 @@ function slamPose85t(){
   o.rh = [lamp.x, lamp.y]; o.lh = [pk.x + Math.cos(pk.a)*4, pk.y + Math.sin(pk.a)*4]; o.lamp = lamp;
   o.front.push(c => lampDraw85m(c, lamp.x, lamp.y, lamp.k, lamp.w));
   o.front.push(c => pickDraw85m(c, pk.x, pk.y, pk.a, pk.r, pk.hot, pk.glow));
-  if(glint > 0) o.front.push(c => { const hx = pk.x + Math.cos(pk.a)*pk.r, hy = pk.y + Math.sin(pk.a)*pk.r, R = 5 + 5*glint; c.globalAlpha = 0.9*glint; c.fillStyle = '#fffbe8'; c.shadowColor = GOLD85T; c.shadowBlur = 12;
+  if(glint > 0) o.front.push(c => { const hx = pk.x + Math.cos(pk.a)*pk.r, hy = pk.y + Math.sin(pk.a)*pk.r, R = (5 + 5*glint)*slamGlintK86iG();   /* v0.86i G §7b (iii): x slGlintK86i (2: 10 + 10*glint) */ c.globalAlpha = 0.9*glint; c.fillStyle = '#fffbe8'; c.shadowColor = GOLD85T; c.shadowBlur = 12;
     c.beginPath(); c.moveTo(hx, hy - R); c.lineTo(hx + 1.6, hy - 1.6); c.lineTo(hx + R, hy); c.lineTo(hx + 1.6, hy + 1.6); c.lineTo(hx, hy + R); c.lineTo(hx - 1.6, hy + 1.6); c.lineTo(hx - R, hy); c.lineTo(hx - 1.6, hy - 1.6); c.closePath(); c.fill(); });
   o.slam85t = S && S.phase === 'charge' ? 'charge' : 'land';
   return o;
@@ -43164,10 +43199,27 @@ function blitSub86(g, img, c, x0, y0, x1, y1){ const W = LOOK_CH*TS, X0 = c.cx*W
   g.drawImage(img, ((dx0 - rx)/kx)*k, ((dy0 - ry)/ky)*k, ((dx1 - dx0)/kx)*k, ((dy1 - dy0)/ky)*k, dx0, dy0, dx1 - dx0, dy1 - dy0); return true; }
 /* the standing things, how tall above the feet and how wide (world px; the sampler's, MINE: him and her 34 x 62, an ore 44 x 80, a
    creature from its radius, the Motherlode bigger; a chest 56 x 52) */
-const STAND86 = q => q.tag === 'p1' || q.tag === 'p2' || q.tag === 'ore' || q.tag === 'chest' || String(q.tag).startsWith('enemy');
+/* v0.86i D §4 (YOURS, 2026-10-19 13:38: "Some objects on the floor, such as oil wells are being drawn over walls") every thing the painter's pass
+   draws in the Depths stands under the walls' cover: the queue is drawn after the walls are laid again (relay86), so a thing STAND86
+   does not admit is drawn over every wall nearer the camera (his still: a seep, queued as 'furniture'). Each has its own tag and its
+   drawn box, measured headless at 1.35 over every yaw and state with the glow (harness/v086i_d.mjs): [half-width, up, down] world px
+   from its feet (down was 22 for every box; it stays 22 where no third number is given) */
+const STAND86ID = new Set(['well', 'seep', 'form', 'relic', 'gold', 'orb', 'can', 'flare', 'keg', 'sentry']);
+const SIZE86ID = { well: [38, 60, 22], seep: [44, 28, 30], relic: [80, 126, 30], gold: [62, 54, 26], orb: [30, 46, 14], can: [26, 40, 18],
+  flare: [28, 60, 12], keg: [46, 68, 26], sentry: [34, 44, 20], form: [41, 97, 31] };   /* form: the largest kind's, for one with no ref */
+/* the formations by kind (the TALL kinds' tops, the LOW kinds' and the crack's spread; FORMS' THE EIGHT KINDS) */
+const FORM86ID = { stump: [22, 35, 15], boulder: [39, 45, 18], rubble: [41, 40, 18], crystal: [41, 37, 25], column: [19, 87, 21], split: [41, 97, 31],
+  cluster: [41, 92, 27], crack: [41, 23, 25] };
+/* a creature's box no smaller than its drawing (half-width, up) in radii, where the radius rule fell short (the sheets' frames at
+   1.35: the ore-back 56 x 72 at r 11 in a 24 x 46 box; the rat's tail, the bat's wings, the Motherlode's back) */
+const BODY86ID = { sludge: [4.8, 0], blob: [2.6, 0], slug: [2.8, 0], rat: [2.4, 0], bat: [4.4, 0], brute: [5.6, 7.2], mother: [3.7, 0] };
+const STAND86 = q => q.tag === 'p1' || q.tag === 'p2' || q.tag === 'ore' || q.tag === 'chest' || String(q.tag).startsWith('enemy') || STAND86ID.has(q.tag);   /* v0.86i D §4 (YOURS, 2026-10-19 13:38: "Some objects on the floor, such as oil wells are being drawn over walls") was p1, p2, ore, chest, enemy:* only */
 function size86(q){ const e = q.ref, t = String(q.tag);
-  if(t === 'p1' || t === 'p2') return [34, 62]; if(t === 'ore') return [44, 80]; if(t === 'chest') return [56, 52];
-  const r = e && e.r ? e.r : 12; return t === 'enemy:mother' ? [Math.max(70, r*2.2), Math.max(130, r*4.5)] : [Math.max(24, r*2), Math.max(44, r*4.2)]; }
+  if(t === 'p1') return [34, 70]; if(t === 'p2') return [50, 70]; if(t === 'ore') return [44, 80]; if(t === 'chest') return [56, 52];   /* v0.86i D §4: him 34 x 70 (standing, every facing: 64-67 with the glow and the breath), her 50 x 70 (her lantern stood 48 out of a 34 box); was [34, 62] for both */
+  if(t === 'form'){ const k = e && FORM86ID[e.kind]; return k || SIZE86ID.form; }
+  if(SIZE86ID[t]) return SIZE86ID[t];
+  const r = e && e.r ? e.r : 12, B = BODY86ID[t.slice(6)], base = t === 'enemy:mother' ? [Math.max(70, r*2.2), Math.max(130, r*4.5), 30] : [Math.max(24, r*2), Math.max(44, r*4.2)];   /* v0.86i D §4: the Motherlode's foot 30 below (its drawing 24.3) */
+  return B ? [Math.max(base[0], B[0]*r), Math.max(base[1], B[1]*r), base[2]] : base; }
 const SCR86 = { cv: [] };
 function scr86(i, w, h){ const a = SCR86.cv; if(!a[i]) a[i] = document.createElement('canvas'); const cv = a[i]; if(cv.width < w || cv.height < h){ cv.width = Math.max(cv.width, w); cv.height = Math.max(cv.height, h); }
   const g = fxClamp84(cv.getContext('2d')); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.shadowBlur = 0; g.shadowOffsetX = 0;   /* v0.86d D §7.4: registered */ g.shadowOffsetY = 0; g.clearRect(0, 0, w, h); return g; }
@@ -43176,8 +43228,8 @@ function scr86(i, w, h){ const a = SCR86.cv; if(!a[i]) a[i] = document.createEle
    quads; (c)'s window opens those walls only */
 function coverOf86(q){
   const fx = q.x, fy = q.wy != null ? q.wy : q.y; if(fx == null || !isFinite(fy)) return null;
-  const [hw, tall] = size86(q), [sx, sy] = w2s(fx, fy), s = camS;
-  const ax = Math.max(0, Math.floor(sx - hw*s)), ay = Math.max(0, Math.floor(sy - tall*s)), bx = Math.min(CW, Math.ceil(sx + hw*s)), by = Math.min(CH, Math.ceil(sy + 22*s));
+  const [hw, tall, down] = size86(q), [sx, sy] = w2s(fx, fy), s = camS;   /* v0.86i D §4 (YOURS, 2026-10-19 13:38: "Some objects on the floor, such as oil wells are being drawn over walls") the box's foot from size86 (22 where it gives none) */
+  const ax = Math.max(0, Math.floor(sx - hw*s)), ay = Math.max(0, Math.floor(sy - tall*s)), bx = Math.min(CW, Math.ceil(sx + hw*s)), by = Math.min(CH, Math.ceil(sy + (down || 22)*s));
   if(bx <= ax || by <= ay) return null;
   let wx0 = Infinity, wx1 = -Infinity, wy0 = Infinity, wy1 = -Infinity;
   for(const [px, py] of [[ax, ay], [bx, ay], [ax, by], [bx, by]]){ const [x, y] = s2w86(px, py); wx0 = Math.min(wx0, x); wx1 = Math.max(wx1, x); wy0 = Math.min(wy0, y); wy1 = Math.max(wy1, y); }
@@ -43797,7 +43849,7 @@ function shieldBreakSnd86(){   /* the clang with a glass-break under it (the sam
 function shieldBreak86(p, atk){
   LH86.n.blocks++;
   const src = atk && typeof atk === 'object' && typeof atk.x === 'number' && typeof atk.y === 'number' ? [atk.x, atk.y] : null;
-  LH86.fx.push({ k: 'F1', t0: G.t, p, src, sh: [0, 1, 2, 3, 4].map(i => ({ an: -Math.PI/2 + (i - 2)*0.75 + (rnd86() - 0.5)*0.4, v: 60 + rnd86()*50, rot: (rnd86() - 0.5)*14, s: 0.7 + rnd86()*0.5 })) });
+  LH86.fx.push({ k: 'F1', t0: G.t, p, src, i86iA: Math.max(0, Math.min(SHIELD_MAX86I - 1, Math.floor(p.shield || 0))), sh: [0, 1, 2, 3, 4].map(i => ({ an: -Math.PI/2 + (i - 2)*0.75 + (rnd86() - 0.5)*0.4, v: 60 + rnd86()*50, rot: (rnd86() - 0.5)*14, s: 0.7 + rnd86()*0.5 })) });
   LH86.fx.push({ k: 'F3', t0: G.t, p, sh: [0, 1, 2, 3, 4].map(i => ({ an: i*1.257 + rnd86()*0.5, v: 30 + rnd86()*30, rot: (rnd86() - 0.5)*12 })) });
   if(p === P2 && boardOpen() && PW.panel && PW.path && PW.path.length)
     LH86.fx.push({ k: 'F2', t0: G.t, panel: PW.panel, path: PW.path.map(q => q.slice()), sh: [0, 1, 2, 3, 4].map(i => ({ an: i*1.257 + rnd86()*0.6, v: 40 + rnd86()*40, rot: (rnd86() - 0.5)*12 })) });
@@ -43813,7 +43865,7 @@ function shieldBreakFx86(p, sx, sy){
   for(const f of LH86.fx){
     if(f.k !== 'F1' || f.p !== p) continue;
     const e = G.t - f.t0; if(e < 0 || e >= LIFE86.F1) continue;
-    const px = sx + 13*camS, py = sy - 30*camS;
+    const px = sx + (13 + 9*(f.i86iA || 0))*camS, py = sy - 30*camS;   /* v0.86i A §1 (YOURS: "We want to buff TEMPERED to let the shields stack up to 3.") F1 at the slot of the charge that broke (i86iA, set in shieldBreak86), the row's last; was always the first slot (MINE) */
     ctx.save();
     if(e < 0.16){ const k = e/0.16; temperShield85k(ctx, px, py, (0.62 + 0.55*k)*camS, true, 1);
       ctx.globalAlpha = 0.8*k; ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 20; ctx.beginPath(); ctx.arc(px, py, 4*camS*(1 + k), 0, 6.283); ctx.fill(); ctx.globalAlpha = 1; ctx.shadowBlur = 0; }
@@ -44927,11 +44979,12 @@ const scr1 = pts => pts.map(([x, y]) => w2s(x, y));
 function circleW1(x, y, r, n, seed, wob){ const o = []; for(let i = 0; i < n; i++){ const a = i/n*Math.PI*2, w = 1 + (wob || 0)*(h2(seed || 0, i*7.1) - 0.5); o.push([x + Math.cos(a)*r*w, y + Math.sin(a)*r*w]); } return o; }
 function prism1(worldPts, lift, o){
   o = o || {}; const pal = palD(), s = camS, L = lift*s, taper = o.taper == null ? 1 : o.taper;
+  const lk = fmLook86iE(pal);   /* v0.86i E §5 (YOURS: "The obstacles (pillars, floor obstacles, etc.) in the depths should also get art for each of the depth's phases.") the walls' steps at the stage (null: v0.86h's look) */
   let P = scr1(worldPts); const n = P.length;
   let area = 0; for(let i = 0; i < n; i++){ const a = P[i], b = P[(i + 1) % n]; area += a[0]*b[1] - b[0]*a[1]; } if(area < 0) P = P.slice().reverse();
   let cx = 0, cy = 0; for(const q of P){ cx += q[0]; cy += q[1]; } cx /= n; cy /= n;
   const top = P.map(([x, y]) => [cx + (x - cx)*taper, cy + (y - cy)*taper - L]);
-  const face = o.face || pal.face, faceDark = o.faceDark || pal.faceDark, cap = o.cap || pal.cap, edge = o.edge || EDGE_COL;
+  const face = o.face || (lk && lk.face) || pal.face, faceDark = o.faceDark || (lk && lk.faceDark) || pal.faceDark, cap = o.cap || pal.cap, edge = o.edge || EDGE_COL;   /* v0.86i E §5: from stage 4 the walls' hot faces */
   ctx.save(); ctx.lineJoin = 'round';
   if(L > 0.5){
     if(!o.noShadow){ const sh = (9 + lift*0.25)*s; const g = ctx.createLinearGradient(0, cy, 0, cy + sh*0.9); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); P.forEach((q, i) => i ? ctx.lineTo(q[0], q[1] + sh*0.5) : ctx.moveTo(q[0], q[1] + sh*0.5)); ctx.closePath(); ctx.fill(); }
@@ -44939,10 +44992,12 @@ function prism1(worldPts, lift, o){
       const my = (a[1] + b[1])/2 - cy; if(my <= 0.01) continue;
       const nx = b[1] - a[1];
       ctx.fillStyle = nx < 0 ? face : faceDark; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(tb[0], tb[1]); ctx.lineTo(ta[0], ta[1]); ctx.closePath(); ctx.fill();
+      if(lk && lk.wash){ ctx.fillStyle = lk.wash; ctx.fill(); }   /* v0.86i E §5: stage 5, the wash on the face */
       ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(b[0], b[1]); ctx.lineTo(tb[0], tb[1]); ctx.stroke(); }
   }
   ctx.fillStyle = cap; ctx.beginPath(); top.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fill();
   if(o.capLight){ ctx.fillStyle = o.capLight; ctx.fill(); }
+  if(lk && lk.wash){ ctx.fillStyle = lk.wash; ctx.fill(); }   /* v0.86i E §5: stage 5 the wash on the cap */
   ctx.strokeStyle = edge; ctx.lineWidth = Math.max(1.2, 1.6*s); ctx.shadowColor = edge; ctx.shadowBlur = o.glow == null ? 8 : o.glow;
   ctx.beginPath(); top.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.stroke();
   if(L > 0.5){
@@ -44951,6 +45006,7 @@ function prism1(worldPts, lift, o){
     for(let i = li; i !== ri; i = (i + 1) % n){ const q = P[(i + 1) % n]; ctx.lineTo(q[0], q[1]); }
     ctx.lineTo(top[ri][0], top[ri][1]); ctx.stroke();
   }
+  if(lk){ if(lk.sheen) fmSheen86iE(top, lk); if(lk.th) fmVeins86iE(worldPts, P, top, cy, s, lk); if(lk.thread) fmThread86iE(top, s, lk); }   /* v0.86i E §5: from stage 2 the floor's wet sheen (laid over the edge's glow); from stage 1 the walls' threads; from stage 4 the walls' red edge along the top edge */
   ctx.restore();
 }
 function spike1(wx, wy, L, hw, lean, col){
@@ -44963,6 +45019,7 @@ function spike1(wx, wy, L, hw, lean, col){
 }
 function drawForm1(f){
   const s = camS, cx = f.cx, cy = f.cy;
+  const lk86iE = fmLook86iE(palD()), W86iE = lk86iE && lk86iE.wash;   /* v0.86i E §5 (YOURS: "The obstacles (pillars, floor obstacles, etc.) in the depths should also get art for each of the depth's phases.") the crystal bed and the crack / pool keep their colours and take only the wash */
   const depthOf = p => PV86.depth(p[0], p[1]);
   switch(f.kind){
     case 'stump': { prism1(circleW1(cx, cy, 13, 12, f.seed, 0.12), f.lift, { taper: 0.68 }); break; }
@@ -44982,7 +45039,7 @@ function drawForm1(f){
         ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(sx, sy, 44*s, 44*s*PV86.k, 0, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
       const sp = []; for(let i = 0; i < 9; i++) sp.push({ x: f.tx*TS + 6 + h2(f.seed, i)*52, y: f.ty*TS + 6 + h2(f.seed, i + 31)*52, L: 7 + h2(f.seed, i + 7)*9, w: 2.2 + h2(f.seed, i + 3)*2, lean: (h2(f.seed, i + 5) - 0.5)*6 });
       sp.sort((a, b) => depthOf([a.x, a.y]) - depthOf([b.x, b.y]));
-      for(const q of sp) spike1(q.x, q.y, q.L, q.w, q.lean);
+      for(const q of sp){ spike1(q.x, q.y, q.L, q.w, q.lean); if(W86iE) fmWashSpike86iE(q, W86iE); }   /* v0.86i E §5: was for(const q of sp) spike1(...) */
       break; }
     case 'column': { prism1(circleW1(cx, cy, 9, 10, f.seed, 0.1), f.lift, { taper: 0.82 }); break; }
     case 'split': {
@@ -45004,6 +45061,7 @@ function drawForm1(f){
         const P = scr1(pts);
         ctx.fillStyle = 'rgba(20,34,52,.9)'; ctx.beginPath(); P.forEach((q, i) => i ? ctx.lineTo(q[0], q[1] + 2*s) : ctx.moveTo(q[0], q[1] + 2*s)); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#04101e'; ctx.beginPath(); P.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fill();
+        if(W86iE){ ctx.fillStyle = W86iE; ctx.fill(); }   /* v0.86i E §5: the wash on the pool */
         ctx.strokeStyle = 'rgba(70,120,170,.45)'; ctx.lineWidth = 1.2*s; ctx.stroke();
         const [sx, sy] = w2s(ex, ey); ctx.strokeStyle = 'rgba(159,232,255,.25)'; ctx.lineWidth = 1.5*s; ctx.beginPath(); ctx.moveTo(sx - rx*0.5*s, sy - ry*0.25*s*PV86.k); ctx.lineTo(sx + rx*0.3*s, sy - ry*0.2*s*PV86.k); ctx.stroke();
         ctx.fillStyle = 'rgba(159,232,255,.35)'; ctx.beginPath(); ctx.ellipse(sx + rx*0.25*s, sy + ry*0.3*s*PV86.k, 3*s, 1.2*s, 0, 0, Math.PI*2); ctx.fill();
@@ -45014,6 +45072,7 @@ function drawForm1(f){
         const pts = scr1(L.concat(R.reverse()));
         ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0] + 3*s, q[1] + 3*s) : ctx.moveTo(q[0] + 3*s, q[1] + 3*s)); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#02050a'; ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fill();
+        if(W86iE){ ctx.fillStyle = W86iE; ctx.fill(); }   /* v0.86i E §5: the wash on the crack */
         ctx.strokeStyle = 'rgba(58,95,138,.55)'; ctx.lineWidth = 1*s; ctx.stroke();
         ctx.strokeStyle = 'rgba(58,95,138,.35)'; for(let i = 1; i < n; i += 2){ const a = L[i], b = R[i], [ax, ay] = w2s(a[0], a[1]), [bx, by] = w2s(b[0], b[1]); ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - 9*s, ay - 4*s); ctx.moveTo(bx, by); ctx.lineTo(bx + 8*s, by + 5*s); ctx.stroke(); }
       }
@@ -45028,7 +45087,7 @@ function drawForm1(f){
     try { if(formsLive() && FORMS.list.length){
       const M = 420*camS; FORMS.queued = 0;
       for(const f of FORMS.list){ const [sx, sy] = w2s(f.cx, f.cy); if(!SHEETS86D.formOn(f, sx, sy)) continue;   /* v0.86d D §7.3: its reach */
-        yq(f.cy, () => { try { drawForm1(f); } catch(err){ fail(err); } }, 'form', f.cx); FORMS.queued++; }
+        yq(f.cy, () => { try { drawForm1(f); } catch(err){ fail(err); } }, 'form', f.cx, f);   /* v0.86i D §4 (YOURS, 2026-10-19 13:38: "Some objects on the floor, such as oil wells are being drawn over walls") its ref the formation, so size86 reads its kind; 'form' admitted by STAND86 (was outside the cover) */ FORMS.queued++; }
     } } catch(err){ fail(err); }
     return r; }; }
 /* ---- dress(): the plain rooms, MIXED ---- */
@@ -49329,6 +49388,31 @@ function headScr86hD(fx, fy, k, f0, mk, all){
 }
 beamB86f = beamFloor86hD;   /* v0.86h D §1: the beam's binding re-pointed at the floor drawer (the carried section's text untouched) */
 try { window.BEAMFLOOR86HD = { on: () => beamB86f === beamFloor86hD }; } catch(err){}   /* for the check */
+/* v0.86i G §7b (iii) — HER CHARGED SLAM, THE GLINT HELD AT FULL x slGlintK86i (YOURS, 13:46: "she cannot easily tell when the it is fully
+   charged"). FACT: in play her body is a sheet's frame (bodyOr86d): the v0.86h glint (herMove2's over list, R = 5 + 5 x glint) is part of the
+   frame's sig and baked into it at x 1 — not lost, but not live. So a full charge's pose (herMove2's slam object: its aim is S.face) carries a
+   post hook (rigDraw1 calls it after the body) that draws the glint at K live at the pick's head: the same four-point star, R x K, over the
+   blit (the frame at the sheet's facing) or over the live rig (its own facing). On the body as drawn, never on the shadow (START HERE §6).
+   K 1: no hook (v0.86h). Declared at the end of the samplers' scope (frame1 / add2 are here), the binding herMove2 re-pointed (rigDraw1's wrap
+   convention); the carried cr8moves.js section is not edited. */
+function glint86iG(r){
+  const S = P2.slam85t, K = slamGlintK86iG();
+  if(!r || !S || S.phase !== 'charge' || !S.full || K === 1 || r.aim !== (S.face || P2.face) || typeof r.build !== 'function') return r;
+  const b0 = r.build, p0 = r.post;
+  r.post = function(fx, fy, k){ if(p0) p0.apply(this, arguments); glintDraw86iG(b0, S, fx, fy, k, K); };
+  return r;
+}
+function glintDraw86iG(build, S, fx, fy, k, K){
+  const glint = 0.6 + 0.4*Math.sin((G.t - (S.fullAt != null ? S.fullAt : G.t))*12); if(!(glint > 0)) return;   /* herMove2's own glint */
+  const L = SHB86D.last[1], kq = ((Math.round(k) % 8) + 8) % 8, why = typeof SHEETS86D === 'undefined' ? 'no sheets' : SHEETS86D.bodyWhy(P2);
+  const sheet = !why && !!(L && L.t === G.t && L.kq === kq && L.fr);   /* the sheet served her this draw (bodyOr86d's own test, read again) */
+  const R = frame1(fx, fy, sheet ? kq : k), o = build(R), pk = o && (o.held || []).find(h => h && h.pick); if(!pk) return;
+  const tip = add2(pk.at, pk.dir, pk.r || 34), P = R.p(tip[0], tip[1], tip[2] + (o.lift || 0) - (o.crouch || 0)), Rr = (5 + 5*glint)*K*R.s;
+  const c = ctx; c.save(); c.globalAlpha *= 0.9*glint; c.fillStyle = '#fffbe8'; c.shadowColor = GOLD85T; c.shadowBlur = 12;
+  c.beginPath(); c.moveTo(P[0], P[1] - Rr); c.lineTo(P[0] + 1.6, P[1] - 1.6); c.lineTo(P[0] + Rr, P[1]); c.lineTo(P[0] + 1.6, P[1] + 1.6); c.lineTo(P[0], P[1] + Rr); c.lineTo(P[0] - 1.6, P[1] + 1.6); c.lineTo(P[0] - Rr, P[1]); c.lineTo(P[0] - 1.6, P[1] - 1.6); c.closePath(); c.fill(); c.restore();
+  RING86IG.n.glint++; RING86IG.last = { t: G.t, x: P[0], y: P[1], R: Rr, sheet, K };
+}
+{ const f0 = herMove2; herMove2 = function(){ return glint86iG(f0.apply(this, arguments)); }; }
 return { LOOKS86B: LOOKS, K, A, api, CALL1, CS1, CMARK1, CPING1, ORD1, CLOG1, sendCall1 };
 })();
 const LOOKS86B = BODIES86B.LOOKS86B;   /* v0.86b part D: the looks' storage and its API (BRIEF §5: part F's mirror and racks call it) */
@@ -50800,8 +50884,8 @@ function drawSeepFront(w){ const f = seepState(w).f, yaw = seepYawP(w), near = s
 /* into the painter's pass: the far layer at the far lip's depth, the near layer at the near lip's (the world point on that side, 7 px off the middle) */
 function queueSeepP(w){
   const ey = eyP(), far = [w.x - ey[0]*7, w.y - ey[1]*7], nr = [w.x + ey[0]*7, w.y + ey[1]*7];
-  yq(far[1], () => { try { drawSeepBack(w); } catch(err){ fail(err); } }, 'furniture', far[0], w);
-  yq(nr[1], () => { try { drawSeepFront(w); } catch(err){ fail(err); } }, 'furniture', nr[0], w);
+  yq(far[1], () => { try { drawSeepBack(w); } catch(err){ fail(err); } }, 'seep', far[0], w);   /* v0.86i D §4 (YOURS, 2026-10-19 13:38: "Some objects on the floor, such as oil wells are being drawn over walls") the seep, his still's 'oil well': was 'furniture', never covered */
+  yq(nr[1], () => { try { drawSeepFront(w); } catch(err){ fail(err); } }, 'seep', nr[0], w);   /* v0.86i D §4: was 'furniture' */
 }
 
 /* ---- harness/hub2/src/hub2props.js (md5 1ea7c76b…) l. 241-283, the hub's chest held open and its keg standing, unchanged ---- */
@@ -51257,10 +51341,10 @@ function flat86(){
   PF86.inner = true; try { drawFlat83(); } catch(err){ fail86('drawFlat83', err); } finally { PF86.inner = false; oilWells = W0; pickups = P0; }
   try {
     for(const w of oilWells){ const [sx, sy] = w2s(w.x, w.y); if(sx < -120 || sy < -160 || sx > CW + 120 || sy > CH + 120) continue;
-      if(w.spawn){ yq(w.y + 6, () => { try { drawWellNew(w); PF86.n.well++; } catch(err){ fail86('the well', err); } }, 'chest', w.x, w); }
+      if(w.spawn){ yq(w.y + 6, () => { try { drawWellNew(w); PF86.n.well++; } catch(err){ fail86('the well', err); } }, 'well', w.x, w);   /* v0.86i D §4 (YOURS, 2026-10-19 13:38: "Some objects on the floor, such as oil wells are being drawn over walls") the spawn well as 'well'; was 'chest' */ }
       else if(sn){ queueSeepP(w); PF86.n.seep++; } }
     for(const pk of pickups){ if(pk.got || pk.kind !== 'canister') continue; const [sx, sy] = w2s(pk.x, pk.y); if(sx < -40 || sy < -60 || sx > CW + 40 || sy > CH + 40) continue;
-      yq(pk.y + 3, () => { try { drawCanNew(pk); PF86.n.can++; } catch(err){ fail86('a canister', err); } }, 'chest', pk.x, pk); }
+      yq(pk.y + 3, () => { try { drawCanNew(pk); PF86.n.can++; } catch(err){ fail86('a canister', err); } }, 'can', pk.x, pk);   /* v0.86i D §4: was 'chest' */ }
   } catch(err){ fail86('drawFlat83', err); }
   return true;
 }
@@ -51268,7 +51352,7 @@ function flat86(){
 function orbs86(){
   if(PF86.inFlush || !turned86()) return false;
   for(const o of orbs){ if(o.got) continue; const [sx, sy] = w2s(o.x, o.y); if(sx < -40 || sy < -60 || sx > VIEW_W + 40 || sy > CH + 40) continue;
-    yq(o.y + 2, () => { try { drawOrbNew(o); PF86.n.orb++; } catch(err){ fail86('an orb', err); } }, 'chest', o.x, o); }
+    yq(o.y + 2, () => { try { drawOrbNew(o); PF86.n.orb++; } catch(err){ fail86('an orb', err); } }, 'orb', o.x, o);   /* v0.86i D §4: was 'chest' */ }
   return true;
 }
 /* drawSentry84l's guard (the game queues it already): the drum in 3D at THE EIGHT facings, its bullets at the barrels' height */
@@ -51303,13 +51387,13 @@ function relic86(er, c, sx, sy, cs){
    lid's flip and the burst for GOLD.goneT, MINE in the sampler: the game's simply goes) */
 function gold86(er){
   if(!turned86() || !er || !er.chest) return false;
-  const c = er.chest; if(goldState(c)) yq(c.y + 7, () => { try { drawGoldNew(er, c); PF86.n.gold++; } catch(err){ fail86('the gold chest', err); } }, 'chest', c.x, c);
+  const c = er.chest; if(goldState(c)) yq(c.y + 7, () => { try { drawGoldNew(er, c); PF86.n.gold++; } catch(err){ fail86('the gold chest', err); } }, 'gold', c.x, c);   /* v0.86i D §4: was 'chest' */
   return true;
 }
 /* her standing flare (drawWorld's CARD_LIGHTS loop, after his road flare): a stick of red paper planted in the floor, into the painter's pass */
 function flare86(L){
   if(!turned86() || L.held || L.src === 'his') return false;
-  yq(L.y + 2, () => { try { drawFlareNew(L); PF86.n.flare++; } catch(err){ fail86('her flare', err); } }, 'chest', L.x, L);
+  yq(L.y + 2, () => { try { drawFlareNew(L); PF86.n.flare++; } catch(err){ fail86('her flare', err); } }, 'flare', L.x, L);   /* v0.86i D §4: was 'chest' (it stands 55 tall) */
   return true;
 }
 
@@ -55663,7 +55747,7 @@ function titanSwap86fD(){ try { return typeof titanScale85 === 'function' && tit
      the sword   strikes 1-2 zLockDeg 90 · strike 3 zLockDeg3_86gA 135 · the dash lgLockDeg86gA 150 · THE PIERCE pcLockDeg86gA 130 at pcLockR86gA 276
      the staff   strikes stLockDeg86gA 130 · THE LONG BURST lbLockDeg86gA 130 at lbLockR86gA 304 · THE BOLT and THE ORB lockDeg 75
      the blades  the chain blLockDeg 160 · the flip blFlLockDeg86gA 180 (K85Q.flipLockDeg the same; v0.86f 100) · the throw blThLockDeg86gA 75 (v0.86f 37.5)
-     her pick    the chain CH85M.lockDeg 160 at CH85M.lockR86gA 76 / 76 / 106 · the slam SLAM85T.lockDeg 130 (v0.86h B §3: 75, the staff Ω special's)
+     her pick    the chain CH85M.lockDeg 160 at CH85M.lockR86gA 76 / 76 / 106 · the slam SLAM85T.lockDeg 130 (v0.86h B §3: 75, the staff Ω special's; v0.86i G §7a: 40)
    The blades' MARK is not a lock-on and stays as it is (blMarkArc 180, its own unit: the whole arc, blMarkPick85q divides it by 360).
    THE LINE OF SIGHT is not touched (YOURS, 21:51: "we will keep the lock-on's LoS as it is now. I don't want to touch it"): every lock
    function's loop (aim85b, lockZ85e, blLock85q, lockOn85m, slamLock86) is v0.86f's text; only the angle each reads and the reaches change.
@@ -55902,7 +55986,7 @@ function hades86gC(x, y, p, col){
   ctx.fillStyle = col || HUD86GC_COL[who]; ctx.fillRect(fx0, fy0, iw*frac, ih);
   dripSliver85n(fx0, fy0 - 2, iw, ih + 4, p, frac);   /* FACT: SLOW DRIP's reserve, today's sliver past the fill (it draws at by + 2, h - 4) */
   if(shielded){   /* the shield: a white cap past the fill's end, one per shield (up to 3), never over the fill */
-    const cw = Math.max(2, Math.round(g.h*0.2)), n = Math.min(3, Math.max(1, Math.floor(p.shield)));
+    const cw = Math.max(2, Math.round(g.h*0.2)), n = Math.min(SHIELD_MAX86I, Math.max(1, Math.floor(p.shield)));   /* v0.86i A §1 (YOURS, 15:13: "The health bars on the UI can also hold more shield stacks with more white tick marks.") the cap reads SHIELD_MAX86I (was the literal 3), so the bar and the mark cannot disagree; nothing else on the bar moves */
     ctx.fillStyle = '#ffffff'; for(let i = 0; i < n; i++) ctx.fillRect(fx0 + iw*frac + i*(cw + 1), fy0 - 1, cw, ih + 2); }
   /* the digits outside the bar's end (the Hades still's `56 / 125`): the HP digits are the one text left on the HUD */
   const txt = Math.max(0, Math.ceil(p.hp)) + ' / ' + (p.maxhp || 0);
@@ -56311,9 +56395,10 @@ function mapEdgeJob86gD(geo){
   const pool = E.pool || (E.pool = [mapCv86gD(1, 1), mapCv86gD(1, 1)]), front = pool[0] === E.cv ? pool[1] : pool[0];   /* the shown one is never written */
   if(front.width !== w || front.height !== h){ front.width = w; front.height = h; } else front.getContext('2d').clearRect(0, 0, w, h);
   const Mk = mapTmp86gD(0, w, h), gm = Mk.getContext('2d'), go = front.getContext('2d'), op = f => ops.push(f);
+  const bigC86iC = MMBIG85L.on ? MMBIG85L.can : null;   /* v0.86i C §3 (YOURS, 13:38: "There was a bug with the enlarged minimap. It looked like the outline of the map was drawn incorrectly.") the big map's mask from its own canvas, the one its floor is drawn from (was mapCan, the small map's bake, under the big map's geo: the outline of a small copy of the map) */
   /* the mask: the bake through the turn, solid */
   for(let k = 0; k < Q.bands; k++){ const y0 = Math.floor(h*k/Q.bands), y1 = Math.floor(h*(k + 1)/Q.bands);
-    op(() => { gm.save(); gm.beginPath(); gm.rect(0, y0, w, y1 - y0); gm.clip(); gm.translate(geo.cx - ox, geo.cy - oy); gm.transform(PV86.a, PV86.c, PV86.b, PV86.d, 0, 0); gm.translate(-geo.mw/2, -geo.mh/2); gm.drawImage(mapCan, 0, 0); gm.restore(); }); }
+    op(() => { gm.save(); gm.beginPath(); gm.rect(0, y0, w, y1 - y0); gm.clip(); gm.translate(geo.cx - ox, geo.cy - oy); gm.transform(PV86.a, PV86.c, PV86.b, PV86.d, 0, 0); gm.translate(-geo.mw/2, -geo.mh/2); if(bigC86iC) gm.drawImage(bigC86iC, 0, 0, geo.mw, geo.mh); else gm.drawImage(mapCan, 0, 0); gm.restore(); }); }   /* v0.86i C §3 (YOURS, 13:38: "There was a bug with the enlarged minimap. It looked like the outline of the map was drawn incorrectly.") MMBIG85L.can to (0, 0, geo.mw, geo.mh), as drawMinimapTurned1 draws the big floor */
   op(() => { gm.globalCompositeOperation = 'source-in'; gm.fillStyle = '#fff'; gm.fillRect(0, 0, w, h); gm.globalCompositeOperation = 'source-over'; });
   /* LINE: the mask dilated by 1.5 (drawn round a circle and once in place), filled in the wall's colour, the mask cut out */
   for(let i = 0; i < Q.taps; i++){ const a = i/Q.taps*Math.PI*2, dx = Math.cos(a)*Q.w, dy = Math.sin(a)*Q.w; op(() => go.drawImage(Mk, dx, dy)); }
@@ -56325,7 +56410,8 @@ function mapEdgeJob86gD(geo){
 function mapJobRun86gD(J, budget){ const t0 = performance.now(); while(J.i < J.ops.length){ J.ops[J.i++](); if(performance.now() - t0 >= budget) break; } const ms = performance.now() - t0; J.busy += ms; return ms; }
 function mapEdge86gD(geo){
   const E = MAP86GD.S.edge, Q = MAP86GD.edge; if(!mapCan){ E.job = null; return; }
-  const geoKey = mapCan.width + 'x' + mapCan.height + '|' + geo.px.toFixed(4) + '|' + geo.cx.toFixed(2) + '|' + geo.cy.toFixed(2) + '|' + PV86.ver, key = geoKey + '|' + mapBakeN86gD;
+  if(MMBIG85L.on && !MMBIG85L.can){ E.job = null; return; }   /* v0.86i C §3 (YOURS, 13:38: "There was a bug with the enlarged minimap. It looked like the outline of the map was drawn incorrectly.") the key carries which canvas and its size ('big|' + MMBIG85L.can's width x height), so a switch between the maps is a whole rebuild */
+  const geoKey = (MMBIG85L.on ? 'big|' + MMBIG85L.can.width + 'x' + MMBIG85L.can.height : mapCan.width + 'x' + mapCan.height) + '|' + geo.px.toFixed(4) + '|' + geo.cx.toFixed(2) + '|' + geo.cy.toFixed(2) + '|' + PV86.ver, key = geoKey + '|' + mapBakeN86gD;
   if(E.geoKey !== geoKey){ E.job = null; E.geoKey = geoKey; E.key = key; const J = mapEdgeJob86gD(geo); mapJobRun86gD(J, 1e9); J.done(); E.whole++; }   /* the place, the px, the turn: at once */
   else if(E.key !== key && !E.job && performance.now() - E.lastJob >= Q.every*1000){ E.key = key; E.lastJob = performance.now(); E.job = mapEdgeJob86gD(geo); E.jobs++; }   /* the map filled: a job */
   if(E.job){ const ms = mapJobRun86gD(E.job, Q.budget); E.steps++; E.stepMax = Math.max(E.stepMax, ms); if(E.job.i >= E.job.ops.length){ E.job.done(); E.job = null; } }
@@ -56766,6 +56852,209 @@ function projLift86hF(kind, sx, sy, r){
   return sy - z*camS;
 }
 try { window.PROJ86HF = PROJ86HF; } catch(err){}   /* for the check */
+/* ==================================================================================================================================
+   v0.86i E §5 — THE DEPTHS' FORMATIONS TAKE THE ART STAGE (HANDOFF — v0.86i.md §5). Names ending 86iE are new.
+   YOURS (13:38): "The obstacles (pillars, floor obstacles, etc.) in the depths should also get art for each of the depth's phases."
+   The build (the handoff's picks, MINE there): the formations are the same stone as the walls at every stage. prism1 reads the stage
+   (lookStage83) and takes the walls' steps (lookBake83 / lookBake86):
+   - from stage 1 THE THREADS (the walls' capillaries, "along every edge and down the faces"): a wavy thread along the cap's front edge, one
+     down a face every ~24 world px of front, the branches onto the cap; the walls' colour, alpha, width and blur at each stage (the plum
+     '176,52,96' at 1-3, the red '255,70,110' and the heavier pair from 4, `more` at 5: a second thread down the faces and more branches);
+     the walls' two layers (the bake's, no blur, and the overlay's, blurred, at the walls' pulse), both laid source-over (the lead's second
+     pass, 2026-10-19: "the walls do change at stage 1");
+   - from stage 2 the floor's wet sheen on the cap (the floor's two strokes, 'rgba(130,180,205,.07)' and 'rgba(200,230,245,.10)'), at
+     fmSheenK86i times their alpha and laid over the edge's glow (MINE, the second pass: at the floor's own .07 under the glow it did not
+     read at play scale);
+   - from stage 4 pal.faceHot / faceHotDark on the faces and the walls' red edge along the top edge (edge(w, 'rgba(255,70,110,.24)', 2.5, 8,
+     '#ff4a6e'): its colour, its width and its blur, in world px x camS as the chunk's are on the screen), and over it the threads overlay's
+     living copy at the walls' pulse (MINE);
+   - at stage 5 LOOK_WASH over the faces and the cap.
+   The crystal bed's spikes and the crack / pool keep their colours and take only the wash (the bed's glow lies on the floor, and the floor
+   takes no wash). Stage 3 changes nothing on a formation (the walls' stage-3 step is the sconces and the drips: no stone part).
+   THE CROSS-FADE is the walls': while LOOK83.from fades out over LOOK_FADE, every step is blended by the walls' fk (the faces' colour mixed,
+   the sheen / red edge / wash at fk x their alpha; the threads of the two stages each at their share when they differ).
+   Live drawing: no sheet, no bake; the look is worked out once a frame (fmLook86iE's cache) and each prism reads it.
+   THE DIALS (THE DEPTHS' VIEW tab, group DEPTHS · FORMATIONS): fmStage86i (OFF = v0.86h's look), fmThread86i (the threads, the red edge, its
+   beat), fmWash86i, fmSheenK86i; written into FM86IE by fmDials86iE() from feelApply84p in a studio run's side B, the shipped values in
+   every other run (as slamDials85t). */
+var FM86IE = { stage: true, thread: true, wash: true, sheenK: 4,
+  /* the walls' own numbers (lookBake83 l. 25921–25922, 26002; lookBake86 l. 43069–43070, 43163), named here so the check can read them */
+  sheen: ['130,180,205', 0.07], glint: ['200,230,245', 0.10], red: ['255,70,110', 0.24, 2.5, 8, '#ff4a6e'],
+  /* and the red edge's living copy, the threads overlay's (edge(q, 'rgba(255,70,110,.5)', 3, 12, '#ff4a6e'), lookBake83 l. 26026, lookBake86 l. 43194), at the
+     walls' own pulse (pulse83: the lub-dub at 4, the fast one at 5) — MINE: so the formations' thread beats with the walls' */
+  beat: ['255,70,110', 0.5, 3, 12, '#ff4a6e'],
+  /* THE THREADS (lookBake83 l. 26005-26025, lookBake86 l. 43166-43193): col = big ? '255,70,110' : '176,52,96'; the bake's layer
+     thread(w, big ? 0.55 : 0.32, big ? 2.6 : 1.1, 0), the overlay's thread(q, big ? 0.95 : 0.6, big ? 2.8 : 1.3, big ? 9 : 4) at pulse83 */
+  veins: { plum: '176,52,96', red: '255,70,110', bake: [[0.32, 1.1, 0], [0.55, 2.6, 0]], over: [[0.6, 1.3, 4], [0.95, 2.8, 9]] },
+  c: null, looks: 0 };
+function fmDials86iE(){
+  if(!FM86IE) return;   /* feelApply84p may run before this block's line has run (var: no TDZ) */
+  const S0 = fmDials86iE.ship || (fmDials86iE.ship = { stage: FM86IE.stage, thread: FM86IE.thread, wash: FM86IE.wash, sheenK: FM86IE.sheenK });
+  const F = studio85() ? F84p() : null, v = (id, d) => F && typeof F[id] === typeof d ? F[id] : d;
+  FM86IE.stage = v('fmStage86i', S0.stage); FM86IE.thread = v('fmThread86i', S0.thread); FM86IE.wash = v('fmWash86i', S0.wash); FM86IE.sheenK = +v('fmSheenK86i', S0.sheenK);
+  FM86IE.c = null;
+}
+/* two '#rrggbb' mixed by k (0 = a, 1 = b) */
+function fmMix86iE(a, b, k){
+  const p = (h, i) => parseInt(h.slice(1 + i*2, 3 + i*2), 16);
+  return 'rgb(' + [0, 1, 2].map(i => Math.round(p(a, i) + (p(b, i) - p(a, i))*k)).join(',') + ')';
+}
+/* LOOK_WASH at k of its alpha */
+function fmWashCol86iE(k){
+  const m = /rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/.exec(LOOK_WASH);
+  if(!m) return k >= 1 ? LOOK_WASH : null;
+  return k >= 1 ? LOOK_WASH : 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + (+m[4]*k).toFixed(4) + ')';
+}
+/* one stage's threads at share k: its colour, its two layers (the overlay's alpha at the stage's pulse) */
+function fmVeinSet86iE(stage, k){
+  const V = FM86IE.veins, big = stage >= 4, i = big ? 1 : 0, col = big ? V.red : V.plum, B = V.bake[i], O = V.over[i];
+  return { stage, big, more: stage >= 5, k, col,
+           bake: ['rgba(' + col + ',' + (B[0]*k).toFixed(4) + ')', B[1], B[2]],
+           over: ['rgba(' + col + ',' + (O[0]*Math.min(1, pulse83(stage, G.t))*k).toFixed(4) + ')', O[1], O[2]] };
+}
+/* THE LOOK for this frame: null = v0.86h's (the dial OFF, not the Depths' run, or stage 0) */
+function fmLook86iE(pal){
+  const T = FM86IE; if(!T || !T.stage || !lookOn83()) return null;
+  const L = LOOK83, st = lookStage83(), from = L && L.from != null && L.stage === st ? L.from : -1, f0 = L ? L.fadeT0 : 0, C = T.c;
+  if(C && C.t === G.t && C.st === st && C.from === from && C.f0 === f0 && C.pal === pal && C.th === T.thread && C.wa === T.wash && C.sk === T.sheenK) return C.v;
+  let fk = 1; if(from >= 0){ fk = (G.t - f0)/LOOK_FADE; if(!(fk >= 0) || fk >= 1) fk = 1; }
+  const fade = from >= 0 && fk < 1;
+  /* a step's share: 1 at or past its stage; in the cross-fade the new stage's at fk, the old one's at 1 - fk (the walls' two chunks) */
+  const k = lo => { const a = st >= lo ? 1 : 0; return fade ? a*fk + (from >= lo ? 1 : 0)*(1 - fk) : a; };
+  const kHot = k(4), kWet = k(2), kTh = T.thread ? kHot : 0, kWa = T.wash ? k(5) : 0, kV = T.thread ? k(1) : 0, sk = Math.max(0, +T.sheenK || 0);
+  /* the threads: the stage's set; in the cross-fade the old stage's set too when it differs (plum / red, `more`), each at its share */
+  const th = [];
+  if(kV > 0){
+    const same = fade && (from >= 4) === (st >= 4) && (from >= 5) === (st >= 5);
+    if(!fade || same){ if(st >= 1 || from >= 1) th.push(fmVeinSet86iE(st >= 1 ? st : from, kV)); }
+    else { if(st >= 1) th.push(fmVeinSet86iE(st, fk)); if(from >= 1) th.push(fmVeinSet86iE(from, 1 - fk)); }
+  }
+  let v = null;
+  if(kHot > 0 || kWet > 0 || kWa > 0 || th.length){
+    const hot = (c0, c1) => kHot <= 0 ? null : kHot >= 1 ? c1 : fmMix86iE(c0, c1, kHot);
+    v = { st, from: fade ? from : null, fk, kHot, kWet, kTh, kWa, kV,
+          face: hot(pal.face, pal.faceHot), faceDark: hot(pal.faceDark, pal.faceHotDark),
+          sheen: kWet > 0 && sk > 0 ? 'rgba(' + T.sheen[0] + ',' + Math.min(1, T.sheen[1]*kWet*sk).toFixed(4) + ')' : null,
+          glint: kWet > 0 && sk > 0 ? 'rgba(' + T.glint[0] + ',' + Math.min(1, T.glint[1]*kWet*sk).toFixed(4) + ')' : null,
+          thread: kTh > 0 ? 'rgba(' + T.red[0] + ',' + (T.red[1]*kTh).toFixed(4) + ')' : null,
+          beat: kTh > 0 ? 'rgba(' + T.beat[0] + ',' + (T.beat[1]*kTh*Math.min(1, pulse83(st, G.t))).toFixed(4) + ')' : null,
+          th: th.length ? th : null,
+          wash: kWa > 0 ? fmWashCol86iE(kWa) : null };
+  }
+  T.c = { t: G.t, st, from, f0, pal, th: T.thread, wa: T.wash, sk: T.sheenK, v }; T.looks++;
+  return v;
+}
+/* the floor's wet sheen on a cap (screen points): the floor tile's ellipse and its glint stroke, in the cap's proportions, inside the cap;
+   laid after the cap's edge, so its glow does not bury it (MINE, the second pass) */
+function fmSheen86iE(top, lk){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for(const q of top){ if(q[0] < x0) x0 = q[0]; if(q[0] > x1) x1 = q[0]; if(q[1] < y0) y0 = q[1]; if(q[1] > y1) y1 = q[1]; }
+  const w = x1 - x0, h = y1 - y0; if(!(w > 2)) return;
+  ctx.save(); ctx.shadowBlur = 0; ctx.beginPath(); top.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.clip();
+  ctx.fillStyle = lk.sheen; ctx.beginPath(); ctx.ellipse(x0 + w*0.45, y0 + h*0.55, w*0.38, Math.max(1, h*0.26), -0.2, 0, 7); ctx.fill();
+  ctx.fillStyle = lk.glint; ctx.fillRect(x0 + w*0.24, y0 + h*0.5, w*0.22, Math.max(1, 1.2*camS));
+  ctx.restore();
+}
+/* THE THREADS on a prism (screen points P its foot, top its cap; cy the foot's centre): the walls' "along every edge and down the faces" —
+   a wavy thread along the cap's front edge (a little in on the cap, as the walls' runs 7 px in on the top), one down a front face every ~24
+   world px of front (at least one on a front 16 world px or wider: a small rubble rock may have its edge thread only), a second at `more` (stage 5) to 0.7 of the face, and the branches onto the cap (hash > 0.6, at 5 > 0.25);
+   the hash seeded by the prism's first world point, so a formation keeps its threads frame to frame */
+function fmVeins86iE(worldPts, P, top, cy, s, lk){
+  const n = P.length; if(n < 3) return;
+  const sd = hash83(worldPts[0][0]*0.37 + 11.3, worldPts[0][1]*0.61 + 5.7)*997, hs = i => hash83(sd + i*3.17, sd*0.5 + i*7.31);
+  let tcx = 0, tcy = 0; for(const q of top){ tcx += q[0]; tcy += q[1]; } tcx /= n; tcy /= n;
+  const inC = q => { const dx = tcx - q[0], dy = tcy - q[1], d = Math.hypot(dx, dy) || 1, f = Math.min(0.35, 5*s/d); return [q[0] + dx*f, q[1] + dy*f]; };
+  const front = []; let wide = -1, wideW = 0;
+  if(Math.abs(top[0][1] - P[0][1]) > 0.5) for(let i = 0; i < n; i++){ const a = P[i], b = P[(i + 1) % n]; if((a[1] + b[1])/2 - cy <= 0.01) continue; const w = Math.hypot(b[0] - a[0], b[1] - a[1])/s; front.push([i, w]); if(w > wideW){ wideW = w; wide = i; } }
+  const paths = {};
+  const pathOf = more => {
+    if(paths[more]) return paths[more];
+    const p = new Path2D(); let any = false;
+    const run = (f) => { for(let j = 0; j <= 8; j++){ const u = j/8, q = f(u); j ? p.lineTo(q[0], q[1]) : p.moveTo(q[0], q[1]); } };
+    /* along the cap's front edge (or the whole rim when no face shows: a lift-0 prism has none) */
+    const edges = front.length ? front.map(f => f[0]) : [...Array(n).keys()];
+    for(const i of edges){ const A = inC(top[i]), B = inC(top[(i + 1) % n]);
+      run(u => [A[0] + (B[0] - A[0])*u, A[1] + (B[1] - A[1])*u + Math.sin((A[0] + (B[0] - A[0])*u)/s*0.09 + i)*Math.min(1.5*s, 2.5)]); any = true;
+      if(hs(i + 40) > (more ? 0.25 : 0.6)){ const m = [(A[0] + B[0])/2, (A[1] + B[1])/2], dx = tcx - m[0], dy = tcy - m[1], d = Math.hypot(dx, dy) || 1, Lb = Math.min(14*s, d*0.7);
+        run(u => [m[0] + dx/d*Lb*u + (hs(i + 60) - 0.5)*4*s*u, m[1] + dy/d*Lb*u]); } }
+    /* down the faces */
+    let downs = 0; const frontW = front.reduce((t, f) => t + f[1], 0);
+    for(const [i, w] of front){ const pick = hs(i) < Math.min(1, w/24) || (i === wide && frontW >= 16 && !front.some(([j, wj]) => hs(j) < Math.min(1, wj/24)));
+      const lane = (t, to) => { const a = P[i], b = P[(i + 1) % n], ta = top[i], tb = top[(i + 1) % n];
+        const S = [ta[0] + (tb[0] - ta[0])*t, ta[1] + (tb[1] - ta[1])*t], E = [a[0] + (b[0] - a[0])*t, a[1] + (b[1] - a[1])*t];
+        run(u => { const v = 0.06 + u*(to - 0.06); return [S[0] + (E[0] - S[0])*v + Math.sin(u*9 + i)*Math.min(2*s, w*s*0.15), S[1] + (E[1] - S[1])*v]; }); downs++; };
+      if(pick) lane(0.25 + hs(i + 20)*0.5, 0.94);
+      if(more && hs(i + 80) < Math.min(1, w/24)) lane(0.15 + hs(i + 90)*0.7, 0.7); }
+    paths[more] = any || downs ? p : null; return paths[more];
+  };
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for(const V of lk.th){ const p = pathOf(V.more); if(!p) continue;
+    ctx.strokeStyle = V.bake[0]; ctx.lineWidth = V.bake[1]*s; ctx.shadowBlur = 0; ctx.stroke(p);
+    ctx.strokeStyle = V.over[0]; ctx.lineWidth = V.over[1]*s; ctx.shadowColor = 'rgb(' + V.col + ')'; ctx.shadowBlur = V.over[2]*s; ctx.stroke(p); }
+  ctx.restore();
+}
+/* the walls' red edge along a cap's top edge (stage 4+), their colour, width and blur; then its living copy at the walls' pulse */
+function fmThread86iE(top, s, lk){
+  const R = FM86IE.red, Q = FM86IE.beat;
+  ctx.save(); ctx.lineJoin = 'round'; ctx.strokeStyle = lk.thread; ctx.lineWidth = R[2]*s; ctx.shadowColor = R[4]; ctx.shadowBlur = R[3]*s;
+  ctx.beginPath(); top.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.stroke();
+  /* MINE: laid source-over, not the overlay's 'lighter': FACT (this computer's headless Chrome) a blurred stroke laid 'lighter' made the whole
+     frame 95-110 ms at stage 4-5 with twelve formations on the screen (28-31 ms source-over, the base 27-30) */
+  if(lk.beat){ ctx.strokeStyle = lk.beat; ctx.lineWidth = Q[2]*s; ctx.shadowColor = Q[4]; ctx.shadowBlur = Q[3]*s; ctx.stroke(); }
+  ctx.restore();
+}
+/* the wash over one of the crystal bed's spikes (spike1's triangle) */
+function fmWashSpike86iE(q, W){
+  const [sx, sy] = w2s(q.x, q.y), s = camS, l = q.L*s, w = q.w*s, tipx = sx + (q.lean || 0)*s;
+  ctx.save(); ctx.fillStyle = W; ctx.beginPath(); ctx.moveTo(sx - w, sy); ctx.lineTo(tipx, sy - l); ctx.lineTo(sx + w, sy); ctx.closePath(); ctx.fill(); ctx.restore();
+}
+/* v0.86i G §7b — HER CHARGED SLAM: THE TELL AT FULL (HANDOFF — v0.86i.md §7b; YOURS, 2026-10-19 13:46: "she cannot easily tell when the it
+   is fully charged. There is a sound effect when it is fully charged, but I don't see any visual effect other than the line filling in."
+   13:55: "I think a narrower angle and a more clear visual should do it."). Three pieces, each a dial under HER · SLAM: a studio run's side B
+   writes them into SLAMTELL86IG through slamTell86iG() (called at the end of slamDials85t, as SLAM85T is fed); every other run the shipped table.
+   (i)   THE RING: on the frame S.full turns true (updateSlam85t's full line calls slamHook85t('full', S); slamFx85t owns it as it owns the
+         burst, slamFull86iG), a one-shot ring on the floor from her feet in the slam's gold (GOLD85T), its radius 12 -> the box's width x 2
+         (Q.wid x 2: 68 at tier 1) in 0.25 s (eased out), fading; drawn through the floor's matrix with the box (slamInFrame85t, from
+         slamFloor85t: under the bodies, cut by the walls' cover as the box is). A floor mark: nothing is drawn on her shadow (START HERE §6).
+   (ii)  THE FLASH: the box's outline white for 0.12 s from the full frame, then the v0.86h full outline (#ffe9a8 with the gold glow).
+   (iii) THE HELD LOOK: the box's fill at full slHeldFill86i (0.38) steady + the pulse doubled (2 x 0.08: 0.38 - 0.54; v0.86h: 0.07 + 0.12 + 0.08 x pulse,
+         0.19 - 0.27; the lead's MINE: 0.38 = 2 x v0.86h's 0.19 at full — the handoff's 0.22 assumed the fill ended near 0.1, a wrong FACT);
+         the pick's glint x slGlintK86i (2: R = 10 + 10 x glint). In play her body is a sheet's frame and the v0.86h glint (x 1) is baked in it
+         (the pose's over list is part of the frame's sig), so the glint at K is drawn live over the blit by the rig's post hook (glint86iG, at
+         the end of the samplers' scope); the 2D path (slamPose85t) multiplies its own R.
+   OFF (slFullRing86i OFF, slFullFlash86i OFF, slHeldFill86i 0, slGlintK86i 1): v0.86h's look. The sound (SFX.ready) stays. Names end 86iG. */
+const SLAMTELL86IG = { ring: true, flash: true, held: 0.38, glintK: 2, ringT: 0.25, flashT: 0.12 };
+const RING86IG = { list: [], last: null, n: { full: 0, rings: 0, drawn: 0, flash: 0, glint: 0 } };   /* the rings alive; the counts (for the check) */
+function slamTell86iG(){
+  try { SLAMTELL86IG; } catch(e){ return; }   /* as slamDials85t: feelApply84p may run before the table is declared */
+  const S0 = slamTell86iG.ship || (slamTell86iG.ship = { ...SLAMTELL86IG });
+  const F = studio85() ? F84p() : null, M = { ring: 'slFullRing86i', flash: 'slFullFlash86i', held: 'slHeldFill86i', glintK: 'slGlintK86i' };
+  for(const k of Object.keys(S0)){ const id = M[k], v = F && id ? F[id] : undefined;
+    SLAMTELL86IG[k] = v === undefined ? S0[k] : typeof S0[k] === 'boolean' ? !!v : +v; }
+}
+/* slamFx85t('full', S): the full frame (once a charge: S.full turns true once) — the ring is born at her feet, the box's tier width read then */
+function slamFull86iG(S){
+  RING86IG.n.full++;
+  if(!SLAMTELL86IG.ring || !S) return;
+  const Q = typeof slamTierOf86 === 'function' ? slamTierOf86(S) : { wid: slamT85t().wid }, f = S.face || P2.face || [1, 0];
+  RING86IG.list = RING86IG.list.filter(F => G.t - F.t0 >= 0 && G.t - F.t0 < SLAMTELL86IG.ringT);   /* the spent ones go (also when no frame was drawn) */
+  RING86IG.list.push({ t0: G.t, x: P2.x, y: P2.y, d: [f[0], f[1]], r1: 2*(+Q.wid || slamT85t().wid) }); RING86IG.n.rings++;
+}
+/* a ring's state at G.t: u 0 -> 1 over ringT, the radius 12 -> r1 eased out (MINE), the alpha 0.95 -> 0 (MINE) */
+function slamRing86iG(F){ const u = Math.max(0, Math.min(1, (G.t - F.t0)/Math.max(0.01, SLAMTELL86IG.ringT))), e = 1 - (1 - u)*(1 - u); return { u, r: 12 + (F.r1 - 12)*e, al: 0.95*(1 - u) }; }
+/* the floor layer's rings (slamFloor85t, after the charge's box: on the floor, under the bodies) */
+function slamRings86iG(){
+  if(!RING86IG.list.length) return;
+  RING86IG.list = RING86IG.list.filter(F => G.t - F.t0 >= 0 && G.t - F.t0 < SLAMTELL86IG.ringT);   /* a one-shot; a new run's clock drops it */
+  for(const F of RING86IG.list){ const q = slamRing86iG(F); if(!(q.al > 0.01)) continue; RING86IG.n.drawn++;
+    slamInFrame85t(F.x, F.y, F.d, q.r, q.r, c => { c.globalAlpha = q.al; c.strokeStyle = GOLD85T; c.lineWidth = 3; c.shadowColor = GOLD85T; c.shadowBlur = 10;
+      c.beginPath(); c.arc(0, 0, q.r, 0, Math.PI*2); c.stroke(); c.shadowBlur = 0; }); }
+}
+/* THE FLASH: true for flashT from the full frame */
+function slamFlash86iG(S){ return !!(SLAMTELL86IG.flash && S && S.full && S.fullAt != null && G.t - S.fullAt >= 0 && G.t - S.fullAt < SLAMTELL86IG.flashT); }
+/* THE HELD LOOK: the box's fill alpha (v0.86h's below full, and at full when the dial is 0) */
+function slamFill86iG(k, pul, full){ const H = +SLAMTELL86IG.held || 0; return full && H > 0 ? H + 2*0.08*pul : 0.07 + 0.12*k + 0.08*pul; }
+function slamGlintK86iG(){ const K = +SLAMTELL86IG.glintK; return K > 0 ? K : 1; }
 /* v0.84a §7 — THE DEV MENU AND THE BOT RUN (his rulings of 2026-09-29: F9 / a pad's SELECT on the main menu opens it, START
    stays the game's start button; a human press during a bot run does nothing; a bot run writes its telemetry, flagged, and
    never a record). The menu is the pause menu's look and grammar: up / down pick a row, left / right change it, Enter / Space /
